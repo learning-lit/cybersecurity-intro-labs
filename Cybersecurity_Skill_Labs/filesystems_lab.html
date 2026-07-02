@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF OS Commands & Local Recon Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-indigo-600/20">
+                SYSTEMS
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>CTF OS Commands Lab</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Host Navigation, Local Recon & Privilege Escalation</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-indigo-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Explanations & Mission Playbook -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-widest mb-1">Target Assessment</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    Local enumeration occurs once initial system access has been achieved. Whether on Linux or Windows, you must investigate host environments using terminal-based shell scripts to locate sensitive configuration leaks or path misconfigurations.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Select Target Subsystem</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-indigo-400 transition">Linux Host Recon</h4>
+                                <p class="text-xs text-slate-400">File locating & pattern searches</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Windows CMD Inventory</h4>
+                                <p class="text-xs text-slate-400">Audit system parameters & users</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Privilege Escalation</h4>
+                                <p class="text-xs text-slate-400">Abuse sudo configurations for root</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Extracted Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span id="prompt-label" class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        user@linux-sandbox:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Linux Environment</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 flex flex-col overflow-hidden justify-between">
+
+                <!-- Dynamic Command Terminal Shell Console -->
+                <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full">
+                    <!-- Historical Log Screen -->
+                    <div id="shell-history" class="flex-1 p-5 overflow-y-auto text-xs code-font space-y-2 text-slate-300">
+                        <!-- Loaded dynamically based on active challenge -->
+                    </div>
+                    
+                    <!-- Command Line Input Row -->
+                    <div class="bg-slate-950 border-t border-slate-800 p-4 flex items-center gap-2">
+                        <span id="cli-prompt" class="text-indigo-400 font-bold text-xs code-font">user@linux-sandbox:~$</span>
+                        <input id="cli-input" type="text" placeholder="Type system commands here (e.g., help, ls, whoami)..." class="flex-1 bg-transparent border-none outline-none text-xs code-font text-slate-100" autofocus>
+                    </div>
+                </div>
+
+                <!-- Footer Quick Cheat Sheet -->
+                <div class="mt-4 bg-slate-900/40 border border-slate-800/80 rounded-xl p-4">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Subsystem Command Equivalency Guide</span>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-850">
+                            <span class="text-indigo-400 font-semibold block mb-0.5">Directory Listing</span>
+                            <span class="text-slate-400 font-mono text-[10px]">Linux: <strong class="text-slate-300">ls</strong> | Windows: <strong class="text-slate-300">dir</strong></span>
+                        </div>
+                        <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-850">
+                            <span class="text-indigo-400 font-semibold block mb-0.5">Read File Content</span>
+                            <span class="text-slate-400 font-mono text-[10px]">Linux: <strong class="text-slate-300">cat</strong> | Windows: <strong class="text-slate-300">type</strong></span>
+                        </div>
+                        <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-850">
+                            <span class="text-indigo-400 font-semibold block mb-0.5">User Identity</span>
+                            <span class="text-slate-400 font-mono text-[10px]">Linux: <strong class="text-slate-300">whoami</strong> | Windows: <strong class="text-slate-300">whoami</strong></span>
+                        </div>
+                        <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-850">
+                            <span class="text-indigo-400 font-semibold block mb-0.5">Path Location</span>
+                            <span class="text-slate-400 font-mono text-[10px]">Linux: <strong class="text-slate-300">pwd</strong> | Windows: <strong class="text-slate-300">cd</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4 font-medium">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Stuck? Toggle <strong>Guided Learning</strong> or run system discovery queries.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">How do shells secure host controls?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Engine & Command Line Interpreter Javascript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Challenge flag registry
+        const flagSolutions = {
+            1: { flag: "CTF{linux_f1l3_s34rch_m4st3r}", solved: false, value: 100 },
+            2: { flag: "CTF{win_sys_aud1t_p0w3rsh3ll}", solved: false, value: 100 },
+            3: { flag: "CTF{sudo_bin_priv_esc_root}", solved: false, value: 100 }
+        };
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: Linux Host Recon",
+                concept: `Local host investigations require searching directory indexes for misplaced keys. In Linux shells, operations like <code class="text-slate-200">ls -la</code> expose hidden files (starting with <code class="text-slate-200">.</code>), and <code class="text-slate-200">grep</code> lets you scan files for specific text matches.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Type <strong class="text-white">ls</strong> to list files in your current working directory.</li>
+                    <li>Notice there are standard files. Use <strong class="text-white">ls -la</strong> to reveal hidden directories or hidden configurations.</li>
+                    <li>Read file content with <strong class="text-white">cat .secret_notes</strong> or check directory paths using <strong class="text-white">pwd</strong>.</li>
+                    <li>Inspect the returned outputs to discover database secret tokens and capture your flag.</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Windows CMD Inventory",
+                concept: `Windows environments utilize different command syntax. Traditional Command Prompt (CMD) relies on <code class="text-slate-200">dir</code> instead of <code class="text-slate-200">ls</code>, and <code class="text-slate-200">type</code> rather than <code class="text-slate-200">cat</code>. Enumerating active user privileges with <code class="text-slate-200">whoami /priv</code> often exposes vulnerabilities.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Start by running <strong class="text-white">dir</strong> to analyze root folders.</li>
+                    <li>You'll notice an administrative configuration backup. Use <strong class="text-white">type config.bak</strong> to read file contents.</li>
+                    <li>Execute <strong class="text-white">whoami /priv</strong> to inspect current token privileges.</li>
+                    <li>Combine host inventory clues from file files or user details to discover the Windows challenge flag.</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Local Privilege Escalation",
+                concept: `Sudo stands for "superuser do". Linux systems regulate permissions using configurations in <code class="text-slate-200">/etc/sudoers</code>. If an administrative policy mistakenly allows a standard user to run binary programs with administrative root rights (<code class="text-slate-200">sudo -l</code>), you can exploit this to achieve a root shell.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Query active privileges by running <strong class="text-white">sudo -l</strong>.</li>
+                    <li>Notice that <code class="bg-slate-950 px-1 py-0.5 rounded text-indigo-400 font-mono">/usr/bin/find</code> can be executed as root with no password required.</li>
+                    <li>Find is capable of escaping sandbox wrappers. Run: <code class="bg-slate-950 px-1 py-0.5 rounded text-indigo-400 font-mono">sudo find . -exec /bin/sh -c "whoami; cat /root/flag.txt" \;</code></li>
+                    <li>Executing this instruction runs find with superuser properties, dumping the flag straight from the protected root folder!</li>
+                </ol>`
+            }
+        };
+
+        // Simulated Virtual Filesystem Database
+        const filesystems = {
+            1: { // Linux Challenge 1
+                '/home/user': {
+                    'notes.txt': 'Standard developer system notes.\nDatabase configuration backups are stored locally.',
+                    '.secret_notes': 'CRITICAL LOCAL EXPORT:\nFlag sequence: CTF{linux_f1l3_s34rch_m4st3r}\nAvoid uploading this hidden file to public repos!',
+                    'src': '[DIR]'
+                }
+            },
+            2: { // Windows Challenge 2
+                'C:\\Users\\user': {
+                    'Documents': '[DIR]',
+                    'Desktop': '[DIR]',
+                    'config.bak': '=== SECURITY CONFIGURATION BACKUP ===\nLocal Token Integrity level: HIGH\nExposed system flag: CTF{win_sys_aud1t_p0w3rsh3ll}\nKeep local registry values locked.'
+                }
+            },
+            3: { // Linux Privilege Escalation Challenge 3
+                '/home/user': {
+                    'scripts': '[DIR]',
+                    'readme.md': 'System administration configuration review. Read instructions on "sudo -l".'
+                }
+            }
+        };
+
+        let currentPaths = {
+            1: '/home/user',
+            2: 'C:\\Users\\user',
+            3: '/home/user'
+        };
+
+        // Window load setups
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+            setupCLIInput();
+        });
+
+        // Switch workspace displays
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+            const promptLabel = document.getElementById('prompt-label');
+            const cliPrompt = document.getElementById('cli-prompt');
+
+            const history = document.getElementById('shell-history');
+            history.innerHTML = ''; // Reset console feed on transition
+
+            if (challengeNum === 1) {
+                workspaceTitle.textContent = "WORKSPACE: Linux Host Environment";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> user@linux-sandbox:~$`;
+                cliPrompt.textContent = "user@linux-sandbox:~$";
+                
+                history.innerHTML = `<div>Host Sandbox initialized. Linux terminal connected. Type <span class="text-indigo-400">help</span> to list commands.</div>`;
+            } else if (challengeNum === 2) {
+                workspaceTitle.textContent = "WORKSPACE: Windows PowerShell/CMD";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> PS C:\\Users\\user&gt;`;
+                cliPrompt.textContent = "C:\\Users\\user>";
+                
+                history.innerHTML = `<div>Microsoft Windows [Version 10.0.19044.1288]\n(c) Microsoft Corporation. All rights reserved.\n\nPowerShell console opened. Type <span class="text-indigo-400">help</span> to begin.</div>`;
+            } else if (challengeNum === 3) {
+                workspaceTitle.textContent = "WORKSPACE: Linux Privilege Escalation Check";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> operator@sys-audit:~$`;
+                cliPrompt.textContent = "operator@sys-audit:~$";
+                
+                history.innerHTML = `<div>Connected to system audit target. Standard non-privileged user session established.\nIdentify administrative configurations or SUID files.</div>`;
+            }
+
+            // Adjust navigation tabs highlight
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-c${i}`);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition flex items-start justify-between group";
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                }
+            }
+
+            // Populate Guided Learning text block
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Explore and enumerate the filesystems using low-level terminal operations with no assistance guidelines.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Setup Command Terminal Keyboard Trigger Actions
+        function setupCLIInput() {
+            const cliInput = document.getElementById('cli-input');
+            const history = document.getElementById('shell-history');
+
+            cliInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const rawCommand = cliInput.value;
+                    cliInput.value = '';
+
+                    if (rawCommand.trim() === '') return;
+
+                    // Append user query row
+                    const userLine = document.createElement('div');
+                    userLine.className = 'text-slate-400 font-mono mt-2 flex gap-2';
+                    
+                    let promptSign = "user@linux-sandbox:~$";
+                    if (activeChallenge === 2) promptSign = "C:\\Users\\user>";
+                    if (activeChallenge === 3) promptSign = "operator@sys-audit:~$";
+
+                    userLine.innerHTML = `<span class="text-indigo-400">${promptSign}</span> <span>${escapeHTML(rawCommand)}</span>`;
+                    history.appendChild(userLine);
+
+                    // Parse system instruction
+                    interpretCommand(rawCommand);
+
+                    // Auto scroll shell history window
+                    history.scrollTop = history.scrollHeight;
+                }
+            });
+        }
+
+        // Interpreter logic mapping mock shells
+        function interpretCommand(cmdLine) {
+            const history = document.getElementById('shell-history');
+            const res = document.createElement('div');
+            res.className = 'text-indigo-300 pl-4 py-1 code-font leading-relaxed whitespace-pre';
+
+            // Tokenize inputs
+            const parts = cmdLine.trim().split(/\s+/);
+            const baseCmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            // Handle general CLI instructions globally
+            if (baseCmd === 'clear' || baseCmd === 'cls') {
+                history.innerHTML = '<div>System console logs cleared.</div>';
+                return;
+            }
+
+            if (baseCmd === 'help') {
+                if (activeChallenge === 2) {
+                    res.innerHTML = `Windows Command Prompt Utilities:\n
+- <strong class="text-white">dir</strong>          : List directory files
+- <strong class="text-white">type [file]</strong>  : Print file output
+- <strong class="text-white">whoami</strong>       : View local user identity
+- <strong class="text-white">whoami /priv</strong> : Inspect security token credentials
+- <strong class="text-white">cls</strong>          : Clear output console screen`;
+                } else {
+                    res.innerHTML = `Linux Shell Utilities:\n
+- <strong class="text-white">ls</strong>           : List directory contents (use <strong class="text-white">ls -la</strong> for hidden directories)
+- <strong class="text-white">cat [file]</strong>   : Read file streams
+- <strong class="text-white">pwd</strong>          : Print active path directory
+- <strong class="text-white">whoami</strong>       : Identify host session context
+- <strong class="text-white">sudo -l</strong>      : Discover user sudo execution privileges
+- <strong class="text-white">clear</strong>        : Clear terminal console feed`;
+                }
+                history.appendChild(res);
+                return;
+            }
+
+            // Challenge-specific command parsers
+            if (activeChallenge === 1) { // Linux Challenge 1
+                const fs = filesystems[1][currentPaths[1]];
+
+                switch (baseCmd) {
+                    case 'ls':
+                        if (args[0] === '-la' || args[0] === '-a' || args[0] === '-l') {
+                            res.innerHTML = `total 16\ndrwxr-xr-x 2 user user 4096 Jul  2 12:20 .\ndrwxr-xr-x 3 root root 4096 Jul  2 12:20 ..\n-rw-r--r-- 1 user user   64 Jul  2 12:20 <span class="text-emerald-400 font-bold">.secret_notes</span>\n-rw-r--r-- 1 user user   84 Jul  2 12:20 notes.txt\ndrwxr-xr-x 2 user user 4096 Jul  2 12:20 src`;
+                        } else {
+                            res.innerHTML = `notes.txt   src`;
+                        }
+                        break;
+                    case 'cat':
+                        const file = args[0];
+                        if (!file) {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = 'cat: Missing target filename.';
+                        } else if (fs[file]) {
+                            res.textContent = fs[file];
+                            if (file === '.secret_notes') {
+                                notify("Hidden Notes Discovered!", "You revealed the hidden config. Linux Flag logged!", "success");
+                            }
+                        } else {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = `cat: ${file}: No such file in directory`;
+                        }
+                        break;
+                    case 'pwd':
+                        res.textContent = currentPaths[1];
+                        break;
+                    case 'whoami':
+                        res.textContent = 'user';
+                        break;
+                    default:
+                        res.className = 'text-red-400 pl-4';
+                        res.textContent = `bash: command not found: ${baseCmd}. Type "help" for guidelines.`;
+                }
+            } 
+            else if (activeChallenge === 2) { // Windows Challenge 2
+                const fs = filesystems[2][currentPaths[2]];
+
+                switch (baseCmd) {
+                    case 'dir':
+                        res.innerHTML = ` Directory of C:\\Users\\user\n\n07/02/2026  12:20 PM    &lt;DIR&gt;          Desktop\n07/02/2026  12:20 PM    &lt;DIR&gt;          Documents\n07/02/2026  12:20 PM               204 <span class="text-emerald-400 font-bold">config.bak</span>\n               1 File(s)            204 bytes\n               2 Dir(s)  42,104,112,242 bytes free`;
+                        break;
+                    case 'type':
+                        const file = args[0];
+                        if (!file) {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = 'The syntax of the command is incorrect.';
+                        } else if (fs[file]) {
+                            res.textContent = fs[file];
+                            if (file === 'config.bak') {
+                                notify("Bak File Examined!", "Found exposed flag parameters in windows backup configuration file!", "success");
+                            }
+                        } else {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = `The system cannot find the file specified.`;
+                        }
+                        break;
+                    case 'whoami':
+                        if (args[0] === '/priv') {
+                            res.innerHTML = `PRIVILEGES INFORMATION\n----------------------\n\nPrivilege Name                Description                          State\n============================= ==================================== ========\nSeChangeNotifyPrivilege       Bypass traverse checking             Enabled\nSeBackupPrivilege             Back up files and directories        Disabled\nSeRestorePrivilege            Restore files and directories       Disabled`;
+                        } else {
+                            res.textContent = 'desktop-win10\\user';
+                        }
+                        break;
+                    default:
+                        res.className = 'text-red-400 pl-4';
+                        res.textContent = `'${baseCmd}' is not recognized as an internal or external command,\noperable program or batch file. Type "help" for list of simulated tools.`;
+                }
+            } 
+            else if (activeChallenge === 3) { // Linux Privilege Escalation Challenge 3
+                const fs = filesystems[3][currentPaths[3]];
+
+                switch (baseCmd) {
+                    case 'ls':
+                        res.innerHTML = `readme.md   scripts`;
+                        break;
+                    case 'cat':
+                        if (args[0] === 'readme.md') {
+                            res.textContent = fs['readme.md'];
+                        } else if (args[0] === '/root/flag.txt') {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = 'cat: /root/flag.txt: Permission denied';
+                        } else {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = `cat: file not found`;
+                        }
+                        break;
+                    case 'whoami':
+                        res.textContent = 'operator';
+                        break;
+                    case 'sudo':
+                        if (args[0] === '-l') {
+                            res.innerHTML = `Matching Defaults entries for operator on sys-audit:\n    env_reset, mail_badpass, secure_path=/usr/local/sbin\\:/usr/local/bin\\:/usr/sbin\n\nUser operator may run the following commands on sys-audit:\n    (root) <span class="text-emerald-400 font-bold">NOPASSWD: /usr/bin/find</span>`;
+                        } else if (args[0] === 'find' && args.join(' ').includes('-exec') && args.join(' ').includes('/bin/sh')) {
+                            // Privilege escalation escape bypass matches
+                            res.className = 'text-emerald-400 font-mono';
+                            res.textContent = `root\n[!] Escalated to root privilege level successfully!\nContents of /root/flag.txt:\nCTF{sudo_bin_priv_esc_root}`;
+                            notify("Privilege Escalation Achieved!", "Abused sudo rules on find utility to read root filesystem flag!", "success");
+                        } else {
+                            res.className = 'text-red-400 pl-4';
+                            res.textContent = 'sudo: permission denied or incorrect parameters configured';
+                        }
+                        break;
+                    default:
+                        res.className = 'text-red-400 pl-4';
+                        res.textContent = `bash: command not found: ${baseCmd}`;
+                }
+            }
+
+            history.appendChild(res);
+        }
+
+        // Helper to securely render input entities
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Toast Messages
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-indigo-500/20 text-indigo-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This level's target is already completed.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("RECON LEVEL RESOLVED!", `Terrific navigation! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag sequence. Inspect the local file variables.";
+                notify("Verification Failed", "Flag did not match verification checks.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "System Shell controls", 
+                "Administrative shells enable direct kernel interaction. Restricting application SUID paths and local backups ensures secure host operations.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>

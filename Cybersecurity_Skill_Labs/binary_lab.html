@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Binary Exploitation & Reverse Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-rose-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-rose-600 text-white p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-rose-600/20">
+                PWN / REV
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>CTF Binary Arena</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Low-Level Memory Hijacking & Reverse Engineering</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-rose-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Explanations & Mission Playbook -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-rose-400 uppercase tracking-widest mb-1">Execution Brief</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    In Binary Exploitation (Pwn) and Reverse Engineering (Rev) challenges, we analyze machine-level structures. By subverting assembly math, corrupting local memory stack offsets, or abusing system input routines, we can bypass authorization checkpoints to extract key flags.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Select Binary Target</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-rose-400 transition">Assembly Reversal</h4>
+                                <p class="text-xs text-slate-400">Reverse registers and assembly steps</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Stack Smashing</h4>
+                                <p class="text-xs text-slate-400">Symmetric memory overflow bypass</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Format Leak</h4>
+                                <p class="text-xs text-slate-400">Leak stack parameters with printf</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Extracted Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        debugger@pwn-sandbox:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Assembly Trace Engine</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- ================= CHALLENGE 1: REVERSE ENGINEERING ASSEMBLY ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Decompiled Assembly routine: <span class="code-font text-rose-400">verify_password()</span></h3>
+                        <p class="text-xs text-slate-400">The compiler generated this check sequence. Find which base decimal value of register <code class="code-font text-rose-300">EAX</code> correctly satisfies the conditional jump to print the flag.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Assembly Block -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Instruction Segment (Intel x86-64)</span>
+                            
+                            <div class="space-y-1.5 code-font text-xs">
+                                <div id="asm-line-0" class="p-1.5 rounded transition">001: MOV EAX, [INPUT]</div>
+                                <div id="asm-line-1" class="p-1.5 rounded transition">002: ADD EAX, 0x10</div>
+                                <div id="asm-line-2" class="p-1.5 rounded transition">003: XOR EAX, 0x55</div>
+                                <div id="asm-line-3" class="p-1.5 rounded transition">004: CMP EAX, 0x1337</div>
+                                <div id="asm-line-4" class="p-1.5 rounded transition">005: JE  access_granted</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Registers & Trace Controllers -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">CPU Execution State</span>
+                            
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-slate-400 block mb-1">Set EAX Initial Value (Decimal):</label>
+                                    <input id="asm-input-val" type="number" placeholder="Enter password number" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs code-font text-rose-400 outline-none focus:border-rose-500" value="0">
+                                </div>
+
+                                <div class="bg-slate-950 border border-slate-800/80 rounded p-3 space-y-1.5 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500 font-mono">REGISTER EAX (Dec):</span>
+                                        <span id="reg-eax-dec" class="font-bold text-slate-300">0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500 font-mono">REGISTER EAX (Hex):</span>
+                                        <span id="reg-eax-hex" class="font-bold text-slate-300">0x00000000</span>
+                                    </div>
+                                    <div class="flex justify-between border-t border-slate-800/60 pt-1.5 mt-1">
+                                        <span class="text-slate-500 font-mono">JUMP GATE STATUS:</span>
+                                        <span id="gate-status" class="font-bold text-red-400">LOCKED (CMP failed)</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <button onclick="runAsmTrace()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-lg text-xs transition active:scale-95">
+                                        Execute Instruction Trace
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Assembly Output -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Standard Assembly Output Feed</span>
+                        <div id="asm-output-feed" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs">
+                            -- Supply input variables and run instruction trace above --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: BUFFER OVERFLOW ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Object: <span class="code-font text-sky-400">stack_vulnerable.bin</span></h3>
+                        <p class="text-xs text-slate-400">The program stores your input name in a buffer of 16 bytes. Right next to it on the stack sits the <code class="code-font text-sky-300">is_admin</code> validation integer. Corrupt it by typing beyond the buffer limit!</p>
+                    </div>
+
+                    <!-- Interactive Live Buffer Input -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Dynamic Overflow Payload Input</span>
+                            <span class="text-xs text-sky-400 font-bold code-font">Character Count: <span id="char-counter">0</span> / 16 bytes</span>
+                        </div>
+                        
+                        <input id="overflow-input" type="text" maxlength="28" placeholder="Type text here to watch stack behavior..." class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded px-3 py-2 text-xs code-font text-sky-400 outline-none transition-all" oninput="renderMemoryStack()">
+                    </div>
+
+                    <!-- Interactive Memory Stack Visualization Grid -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">Live Memory Layout Map (Stack)</span>
+                        
+                        <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                            <!-- 16 cells for the local buffer -->
+                            <div class="col-span-4 sm:col-span-8 grid grid-cols-8 gap-2">
+                                <template id="buffer-cell-template">
+                                    <div class="aspect-square bg-emerald-950/20 border border-emerald-500/30 rounded flex flex-col items-center justify-center p-1 font-mono text-center">
+                                        <span class="text-[9px] text-emerald-500/50 block buf-label">buf[X]</span>
+                                        <span class="text-xs font-bold text-emerald-400 cell-val">.</span>
+                                    </div>
+                                </template>
+                                <div id="buffer-grid-container" class="col-span-8 grid grid-cols-8 gap-2">
+                                    <!-- Injected dynamically -->
+                                </div>
+                            </div>
+                            
+                            <!-- Overwrite Variable area -->
+                            <div class="col-span-4 sm:col-span-8 border-t border-slate-800/80 my-2 pt-3">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">Adjacent Stack Storage Parameters</span>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <div id="admin-cell-0" class="aspect-video bg-red-950/20 border border-red-500/30 rounded flex flex-col items-center justify-center p-1 font-mono text-center transition-all">
+                                        <span class="text-[9px] text-red-500/50 block">is_admin[0]</span>
+                                        <span class="text-xs font-bold text-red-400 value-cell">0x00</span>
+                                    </div>
+                                    <div id="admin-cell-1" class="aspect-video bg-red-950/20 border border-red-500/30 rounded flex flex-col items-center justify-center p-1 font-mono text-center transition-all">
+                                        <span class="text-[9px] text-red-500/50 block">is_admin[1]</span>
+                                        <span class="text-xs font-bold text-red-400 value-cell">0x00</span>
+                                    </div>
+                                    <div id="admin-cell-2" class="aspect-video bg-red-950/20 border border-red-500/30 rounded flex flex-col items-center justify-center p-1 font-mono text-center transition-all">
+                                        <span class="text-[9px] text-red-500/50 block">is_admin[2]</span>
+                                        <span class="text-xs font-bold text-red-400 value-cell">0x00</span>
+                                    </div>
+                                    <div id="admin-cell-3" class="aspect-video bg-red-950/20 border border-red-500/30 rounded flex flex-col items-center justify-center p-1 font-mono text-center transition-all">
+                                        <span class="text-[9px] text-red-500/50 block">is_admin[3]</span>
+                                        <span class="text-xs font-bold text-red-400 value-cell">0x00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overflow feedback validation -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Decrypted Shell Terminal Privilege</span>
+                        <div id="overflow-output-feed" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs">
+                            -- Fill buffer beyond limits to hijack admin state variables --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: FORMAT STRING PWN ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Simulated Vulnerable: <span class="code-font text-emerald-400">printf(user_name)</span></h3>
+                        <p class="text-xs text-slate-400">In C, passing raw user inputs directly to <code class="code-font text-emerald-300">printf()</code> without format strings allows an attacker to leak the stack. Use formatting specifiers to print memory strings.</p>
+                    </div>
+
+                    <!-- Sandbox interactive terminal prompt -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-64">
+                        <div id="printf-history" class="flex-1 p-4 overflow-y-auto text-xs code-font space-y-2 text-slate-300">
+                            <div>Secure Host Server connected successfully. Run commands using custom string formatting.</div>
+                            <div class="text-slate-500">// Hint: Passing '%4$s' or '%5$s' tells the printer to read the address at stack offset 4 or 5 as a direct string pointer.</div>
+                        </div>
+                        
+                        <div class="bg-slate-950 border-t border-slate-800 p-3 flex items-center gap-2">
+                            <span class="text-emerald-400 font-bold text-xs code-font">investigator@pwn-host:~$</span>
+                            <input id="printf-terminal-input" type="text" placeholder="Enter string (e.g., Hello, %p.%p or %4$s)..." class="flex-1 bg-transparent border-none outline-none text-xs code-font text-slate-100">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Stuck? Toggle <strong>Guided Learning</strong> or request clues from standard CTF methods.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">How do stack variables work?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Engine & Cryptographic Math Javascript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Challenge flag registry
+        const flagSolutions = {
+            1: { flag: "CTF{4ss3mbly_g4t3_p4ss3d}", solved: false, value: 100 },
+            2: { flag: "CTF{st4ck_sm4sh_succe55}", solved: false, value: 100 },
+            3: { flag: "CTF{fmt_str_pwn_l34k}", solved: false, value: 100 }
+        };
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: Assembly Reverse Engineering",
+                concept: `Compiled application checks execute raw assembler codes sequentially. In reverse engineering, we work backwards through standard instruction routines to find valid gate credentials.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Trace the assembly sequence. It starts with the initial <code class="bg-slate-950 px-1 py-0.5 rounded text-rose-400 font-mono">EAX</code> input.</li>
+                    <li>Then, <code class="bg-slate-950 px-1 py-0.5 rounded text-rose-400 font-mono">EAX = EAX + 16</code> (0x10 is 16 in decimal).</li>
+                    <li>Next, <code class="bg-slate-950 px-1 py-0.5 rounded text-rose-400 font-mono">EAX = EAX ^ 85</code> (0x55 is 85 in decimal).</li>
+                    <li>Finally, EAX is compared against <code class="bg-slate-950 px-1 py-0.5 rounded text-rose-400 font-mono">0x1337</code> (which is <strong class="text-white">4919</strong> in decimal).</li>
+                    <li>Work backwards: <strong class="text-white">4919 &oplus; 85 = 4970</strong>. Next, <strong class="text-white">4970 - 16 = 4954</strong>.</li>
+                    <li>Set EAX initial value to <strong class="text-emerald-400 font-mono font-bold">4954</strong> and click run to verify the solution and trigger the flag!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Stack Variable Overwrite",
+                concept: `When programs write data to local array buffers without length checks (like vulnerable <code class="text-slate-200">gets()</code> or <code class="text-slate-200">strcpy()</code> calls), excess data overwrites adjacent memory on the stack.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Look at the live stack map. There are 16 cells allocated for the <code class="bg-slate-950 px-1 py-0.5 rounded text-sky-400">buffer</code> array.</li>
+                    <li>Directly next to it sit 4 cells representing the 32-bit integer <code class="bg-slate-950 px-1 py-0.5 rounded text-sky-400">is_admin</code> (currently showing 0x00).</li>
+                    <li>Start typing in the text input. Watch the cells fill up.</li>
+                    <li>Type more than <strong class="text-white">16 characters</strong>. The overflow character bytes spill into the adjacent admin storage!</li>
+                    <li>To authenticate, fill all 16 buffer slots and continue writing to turn the admin values non-zero to unlock your flag!</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Format String Pointer Leaks",
+                concept: `Passing unsanitized variables straight into a print call (e.g. <code class="text-slate-200">printf(buf)</code>) is extremely hazardous. An attacker can use format string parameters to examine memory locations arbitrary distances down the stack.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Typing standard characters works normally. But if you type format specifiers like <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400">%p</code> (print pointer), you leak hexadecimal values from stack frames.</li>
+                    <li>Try typing <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400">%p.%p.%p.%p</code> to leak several values from the stack structure.</li>
+                    <li>In standard C print functions, passing a parameter index like <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400">%4$s</code> treats the item at offset 4 on the stack as a string reference pointer and prints it.</li>
+                    <li>Type <strong class="text-white font-mono">%4$s</strong> into the terminal to dereference and read the secret flag string.</li>
+                </ol>`
+            }
+        };
+
+        // Window load setups
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+            buildBufferGrid();
+
+            const guidedBtn = document.getElementById('guided-mode-btn');
+            guidedBtn.addEventListener('click', () => {
+                isGuidedMode = !isGuidedMode;
+                guidedBtn.className = isGuidedMode 
+                    ? "flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    : "flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all";
+                guidedBtn.innerHTML = isGuidedMode 
+                    ? `<span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>GUIDED LEARNING ON`
+                    : `<span class="w-2 h-2 rounded-full bg-slate-500"></span>GUIDED LEARNING OFF`;
+                
+                switchChallenge(activeChallenge);
+            });
+
+            // Set up terminal execution listener
+            setupPrintfTerminal();
+        });
+
+        // Toast Messages
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-rose-500/20 text-rose-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Switch workspace displays
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+
+            if (challengeNum === 1) workspaceTitle.textContent = "WORKSPACE: Assembly Trace Engine";
+            else if (challengeNum === 2) workspaceTitle.textContent = "WORKSPACE: Stack Memory Visualizer";
+            else if (challengeNum === 3) workspaceTitle.textContent = "WORKSPACE: Stack Leak Playground";
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-c${i}`);
+                const ws = document.getElementById(`ws-c${i}`);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 01-1.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Solve these binary levels independently using low-level methods and visual memory mapping.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-rose-400 hover:text-rose-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================= CHALLENGE 1: ASSEMBLY CODE ANALYSIS =================
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function runAsmTrace() {
+            const inputValStr = document.getElementById('asm-input-val').value;
+            let currentEax = parseInt(inputValStr);
+            if (isNaN(currentEax)) currentEax = 0;
+
+            const feed = document.getElementById('asm-output-feed');
+            feed.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-300 code-font text-xs whitespace-pre-line text-left leading-relaxed";
+            feed.textContent = ">>> Initializing debugger trace state...\n";
+
+            // Highlight helper
+            const setHighlight = (lineIdx) => {
+                for(let i=0; i<5; i++) {
+                    const line = document.getElementById(`asm-line-${i}`);
+                    if (i === lineIdx) {
+                        line.className = "p-1.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                    } else {
+                        line.className = "p-1.5 rounded transition text-slate-400";
+                    }
+                }
+            };
+
+            await sleep(400);
+            setHighlight(0);
+            document.getElementById('reg-eax-dec').textContent = currentEax;
+            document.getElementById('reg-eax-hex').textContent = "0x" + currentEax.toString(16).toUpperCase().padStart(8, '0');
+            feed.textContent += `[001] MOV EAX, ${currentEax}  |  EAX is set to initial variable input.\n`;
+
+            await sleep(400);
+            setHighlight(1);
+            currentEax = currentEax + 16; // 0x10 is 16
+            document.getElementById('reg-eax-dec').textContent = currentEax;
+            document.getElementById('reg-eax-hex').textContent = "0x" + currentEax.toString(16).toUpperCase().padStart(8, '0');
+            feed.textContent += `[002] ADD EAX, 0x10      |  Adding 16 to EAX. EAX is now ${currentEax}.\n`;
+
+            await sleep(400);
+            setHighlight(2);
+            currentEax = currentEax ^ 85; // 0x55 is 85
+            document.getElementById('reg-eax-dec').textContent = currentEax;
+            document.getElementById('reg-eax-hex').textContent = "0x" + currentEax.toString(16).toUpperCase().padStart(8, '0');
+            feed.textContent += `[003] XOR EAX, 0x55      |  XOR bitwise operation. EAX is now ${currentEax}.\n`;
+
+            await sleep(400);
+            setHighlight(3);
+            feed.textContent += `[004] CMP EAX, 0x1337    |  Comparing register EAX (${currentEax}) with 4919.\n`;
+
+            await sleep(400);
+            setHighlight(4);
+            const gateStatus = document.getElementById('gate-status');
+            if (currentEax === 4919) {
+                gateStatus.className = "font-bold text-emerald-400";
+                gateStatus.textContent = "UNLOCKED (JE triggered)";
+                feed.textContent += `[005] JE access_granted  |  SUCCESS! Jump condition satisfied.\n\n[!] Flag Decoded: CTF{4ss3mbly_g4t3_p4ss3d}`;
+                notify("Instruction Match!", "Register values satisfy the jump conditional. Level Flag Unlocked!", "success");
+            } else {
+                gateStatus.className = "font-bold text-red-400";
+                gateStatus.textContent = "LOCKED (CMP failed)";
+                feed.textContent += `[005] JE access_granted  |  FAILED. Jump ignored. Program terminated with exit code 1.`;
+                notify("Jump Condition Failed", "EAX did not match 0x1337. Adjust your arithmetic inputs.", "error");
+            }
+
+            // Remove highlight after execution
+            setTimeout(() => {
+                for(let i=0; i<5; i++) {
+                    document.getElementById(`asm-line-${i}`).className = "p-1.5 rounded transition text-slate-300";
+                }
+            }, 1000);
+        }
+
+        // ================= CHALLENGE 2: STACK STABILITY SIMULATOR =================
+        function buildBufferGrid() {
+            const container = document.getElementById('buffer-grid-container');
+            const template = document.getElementById('buffer-cell-template');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const clone = template.content.cloneNode(true);
+                clone.querySelector('.buf-label').textContent = `buf[${i}]`;
+                clone.querySelector('div').id = `stack-buf-${i}`;
+                container.appendChild(clone);
+            }
+        }
+
+        function renderMemoryStack() {
+            const inputStr = document.getElementById('overflow-input').value;
+            const count = inputStr.length;
+            document.getElementById('char-counter').textContent = count;
+
+            // Render Buffer Slots (0-15)
+            for (let i = 0; i < 16; i++) {
+                const cell = document.getElementById(`stack-buf-${i}`);
+                const charVal = cell.querySelector('.cell-val');
+                if (i < count) {
+                    charVal.textContent = `'${inputStr[i]}'`;
+                    cell.className = "aspect-square bg-emerald-500/20 border border-emerald-500 rounded flex flex-col items-center justify-center p-1 font-mono text-center shadow-lg shadow-emerald-500/10";
+                } else {
+                    charVal.textContent = ".";
+                    cell.className = "aspect-square bg-slate-900/60 border border-slate-800 rounded flex flex-col items-center justify-center p-1 font-mono text-center";
+                }
+            }
+
+            // Render Overwrite Slots (16-19) mapping to is_admin array
+            const is_admin_cells = [
+                document.getElementById('admin-cell-0'),
+                document.getElementById('admin-cell-1'),
+                document.getElementById('admin-cell-2'),
+                document.getElementById('admin-cell-3')
+            ];
+
+            let overwritten = false;
+            for (let offset = 0; offset < 4; offset++) {
+                const cell = is_admin_cells[offset];
+                const textVal = cell.querySelector('.value-cell');
+                const strIndex = 16 + offset;
+
+                if (strIndex < count) {
+                    overwritten = true;
+                    let asciiHex = "0x" + inputStr.charCodeAt(strIndex).toString(16).toUpperCase();
+                    textVal.textContent = asciiHex;
+                    cell.className = "aspect-video bg-red-500/20 border border-red-500 rounded flex flex-col items-center justify-center p-1 font-mono text-center shadow-lg shadow-red-500/10 animate-bounce";
+                } else {
+                    textVal.textContent = "0x00";
+                    cell.className = "aspect-video bg-slate-900/60 border border-slate-800 rounded flex flex-col items-center justify-center p-1 font-mono text-center";
+                }
+            }
+
+            const feed = document.getElementById('overflow-output-feed');
+            if (overwritten) {
+                feed.className = "bg-slate-900 border border-emerald-500/30 p-4 rounded-lg text-emerald-400 code-font text-sm font-bold text-center";
+                feed.innerHTML = `
+                    <div class="space-y-1.5">
+                        <span class="block text-xs uppercase tracking-widest text-emerald-500">Root Access Granted! is_admin overwritten.</span>
+                        <span class="text-white block mt-1 font-mono">CTF{st4ck_sm4sh_succe55}</span>
+                    </div>
+                `;
+            } else {
+                feed.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs";
+                feed.textContent = "-- Fill buffer beyond limits to hijack admin state variables --";
+            }
+        }
+
+        // ================= CHALLENGE 3: FORMAT STRING PWN =================
+        function setupPrintfTerminal() {
+            const input = document.getElementById('printf-terminal-input');
+            const history = document.getElementById('printf-history');
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.trim();
+                    input.value = '';
+
+                    if (val === '') return;
+
+                    // Append user query
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'text-slate-400 mt-2 border-l border-slate-800 pl-2';
+                    userDiv.innerHTML = `<span class="text-indigo-400">investigator@pwn-host:~$</span> <span>${val}</span>`;
+                    history.appendChild(userDiv);
+
+                    // Process dynamic C-Style formatted print response
+                    const resDiv = document.createElement('div');
+                    resDiv.className = 'text-emerald-400 pl-4 py-1 font-mono whitespace-pre-wrap';
+
+                    // Parse printf tokens
+                    let responseText = val;
+
+                    // Stack leak values simulation at different offset blocks
+                    const stackPointers = {
+                        1: "0x7ffd98",
+                        2: "0x40105d",
+                        3: "0x7f33a1",
+                        4: "CTF{fmt_str_pwn_l34k}",
+                        5: "0x000000"
+                    };
+
+                    if (responseText.includes("%4$s")) {
+                        responseText = responseText.replace(/%4\$s/g, stackPointers[4]);
+                        notify("Stack Pointer Decoded!", "Format string leaked secret value pointer at offset 4!", "success");
+                    } else if (responseText.includes("%4$p")) {
+                        // Display pointer value of index 4 in hex representation
+                        responseText = responseText.replace(/%4\$p/g, "0x4354467b666d745f");
+                    }
+
+                    // Standard pointer iterations e.g. %p.%p.%p
+                    if (responseText.includes("%p")) {
+                        let matches = (responseText.match(/%p/g) || []).length;
+                        for (let i = 1; i <= matches; i++) {
+                            let pValue = stackPointers[i] || "0x000000";
+                            // Translate to hex pointers if it matches strings index
+                            if (pValue === stackPointers[4]) pValue = "0x4354467b666d745f"; 
+                            responseText = responseText.replace("%p", pValue);
+                        }
+                    }
+
+                    resDiv.innerHTML = `<span class="text-slate-500">printf:</span> "${responseText}"`;
+                    history.appendChild(resDiv);
+
+                    // Scroll to bottom
+                    history.scrollTop = history.scrollHeight;
+                }
+            });
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This level's target is already completed.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("LEVEL RESOLVED!", `Terrific execution! Level 0${matchedChallenge} fully solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag sequence. Inspect the trace outputs or memory spaces.";
+                notify("Verification Failed", "Flag did not match verification checks.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Memory Layout Basics", 
+                "In computer architecture, data structures share memory blocks. Security boundaries must be strictly validated by code logic to prevent corruption.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>

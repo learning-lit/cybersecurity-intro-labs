@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Incident Response & SOC Practice Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-blue-600/20">
+                BLUE TEAM
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>SOC Incident Command</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Threat Detection, Containment, Eradication & Digital Forensics</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-blue-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Incident Response Guide, Playbooks & Submissions -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-1">Incident Report</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    An intrusion alarm has been raised! Attackers have penetrated our web perimeter and initiated localized malicious behavior. As the Incident Responder, you must work through critical containment steps to preserve evidence, isolate services, and recover data assets.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Active Incidents</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-blue-400 transition">Log Analysis</h4>
+                                <p class="text-xs text-slate-400">Isolate malicious requests</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Ransomware Containment</h4>
+                                <p class="text-xs text-slate-400">Process kill & system decryption</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Registry Forensics</h4>
+                                <p class="text-xs text-slate-400">Locate stealthy startup backdoors</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Threat Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive SOC Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span id="prompt-label" class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        responder@soc-terminal:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Web Server Log Auditor</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- ================= CHALLENGE 1: LOG ANALYSIS ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Resource: <span class="code-font text-blue-400">apache2_access.log</span></h3>
+                        <p class="text-xs text-slate-400">Audit our web server access logs. An attacker has targeted database query parameters with an SQL Injection attack. Trace the IP, decode the attack payload, and find the flag.</p>
+                    </div>
+
+                    <!-- Search / Filter Log bar -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs code-font">Filter Logs:</span>
+                            <input id="log-filter" type="text" placeholder="e.g. 192.168.4.150, UNION, product.php" class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-24 pr-3 py-2 text-xs code-font outline-none focus:border-blue-500 transition-all text-slate-200">
+                        </div>
+                        <button onclick="applyLogFilter()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition active:scale-95">
+                            Filter Access Logs
+                        </button>
+                    </div>
+
+                    <!-- Live Log Visual Viewer Container -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-72">
+                            <table class="w-full text-left text-xs code-font">
+                                <thead class="bg-slate-950 sticky top-0 border-b border-slate-800 text-slate-500">
+                                    <tr>
+                                        <th class="p-3">Remote Client Node</th>
+                                        <th class="p-3">Timestamp [UTC]</th>
+                                        <th class="p-3">Requested Resource Header</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Length</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="log-table-body" class="divide-y divide-slate-800/40">
+                                    <!-- Log lines loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Built-in Base64 Utility Decoder Helper -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">SOC Tactical Utility: Base64 Payload Decoder</span>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input id="b64-input" type="text" placeholder="Paste encoded base64 parameter here..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs code-font text-blue-400 outline-none focus:border-blue-500 transition">
+                            <button onclick="decodeBase64Payload()" class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 px-5 py-2 rounded-lg text-xs font-bold transition">
+                                Decode String
+                            </button>
+                        </div>
+                        <div id="b64-output" class="bg-slate-950 border border-slate-850 p-3 rounded-lg text-xs code-font text-slate-400 min-h-[40px] flex items-center">
+                            -- Decoded strings appear here --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: RANSOMWARE MITIGATION ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Infected Host: <span class="code-font text-amber-500">HR_RECORDS_DB</span></h3>
+                        <p class="text-xs text-slate-400">Ransomware is encrypting our local files! Isolate and terminate the malicious executable from the active process list. Once contained, execute the mathematical decryption script to restore host databases.</p>
+                    </div>
+
+                    <!-- Process List Table -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block p-4 bg-slate-900/80 border-b border-slate-850">System Task Monitor (Active Processes)</span>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs code-font">
+                                <thead class="bg-slate-950 border-b border-slate-800 text-slate-500">
+                                    <tr>
+                                        <th class="p-3">PID</th>
+                                        <th class="p-3">Process Name</th>
+                                        <th class="p-3">CPU Usage</th>
+                                        <th class="p-3">Binary File Location</th>
+                                        <th class="p-3 text-right">Emergency Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="process-table-body" class="divide-y divide-slate-800/40">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Decryption Mitigation UI Interface -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Local Containment Recover Tool</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Enter Master Decryption Code:</label>
+                                    <input id="decrypt-key-input" type="number" placeholder="Enter Decrypt Key Code" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 code-font text-blue-400 outline-none focus:border-blue-500">
+                                </div>
+                                <button onclick="attemptDatabaseRestore()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-blue-500/10">
+                                    Eradicate Ransomware & Decrypt
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Ransomware clues context card -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Host Remediation Notes</span>
+                                <p class="mb-2">1. Analyze process paths. Attackers execute payloads from public directories (e.g., <code class="bg-slate-950 text-amber-500 px-1 py-0.5 rounded font-mono">\Temp</code> or <code class="bg-slate-950 text-amber-500 px-1 py-0.5 rounded font-mono">\Public</code>).</p>
+                                <p class="mb-2">2. Containment: Kill the correct PID to freeze the file-locking routine.</p>
+                                <p>3. Decryption: Analysis of the encrypted header shows the unlock master code equates to the math formula: <strong class="text-white font-mono">PID &times; 3</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restoration Status Panel -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Restoration Diagnostic Logs</span>
+                        <div id="decrypt-output" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs">
+                            -- Isolate the attack process thread to launch decryption checks --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: REGISTRY FORENSICS ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Forensics Image: <span class="code-font text-emerald-400">win_registry_hive.raw</span></h3>
+                        <p class="text-xs text-slate-400">Identify persistence pathways. Navigating key paths inside Windows Registries uncovers backdoor items. Audit the tree structure to isolate unauthorized keys.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Registry Directory Tree -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Registry Hive Navigation Tree</span>
+                            
+                            <div class="space-y-2 text-xs code-font select-none">
+                                <div class="cursor-pointer hover:text-blue-400 transition flex items-center gap-1" onclick="expandRegistryNode('hklm')">
+                                    <span>📁</span> <strong class="text-slate-300">HKEY_LOCAL_MACHINE</strong>
+                                </div>
+                                <div id="reg-subfolders" class="pl-6 space-y-2 border-l border-slate-800/80 hidden">
+                                    <div class="cursor-pointer hover:text-blue-400 transition" onclick="expandRegistryNode('hklm-system')">📁 SYSTEM</div>
+                                    <div id="reg-system-sub" class="pl-6 space-y-2 border-l border-slate-800/80 hidden">
+                                        <div class="cursor-pointer hover:text-blue-400 transition" onclick="expandRegistryNode('hklm-system-ccs')">📁 CurrentControlSet</div>
+                                        <div id="reg-ccs-sub" class="pl-6 space-y-2 border-l border-slate-800/80 hidden">
+                                            <div class="cursor-pointer hover:text-blue-400 transition" onclick="expandRegistryNode('hklm-system-ccs-services')">📁 Services</div>
+                                            <div id="reg-services-sub" class="pl-6 space-y-2 border-l border-slate-800/80 hidden">
+                                                <div class="cursor-pointer hover:text-emerald-400 transition text-slate-400" onclick="selectRegistryKey('winrm')">⚙️ WinRM</div>
+                                                <div class="cursor-pointer hover:text-emerald-400 transition text-slate-400" onclick="selectRegistryKey('spooler')">⚙️ Spooler</div>
+                                                <div class="cursor-pointer hover:text-red-400 transition text-rose-400 font-semibold" onclick="selectRegistryKey('wannascream')">⚙️ WannaScream</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="cursor-pointer hover:text-blue-400 transition text-slate-500">📁 SECURITY (Protected)</div>
+                                    <div class="cursor-pointer hover:text-blue-400 transition text-slate-500">📁 SAM (Protected)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Registry Selected Key Attributes values viewer -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Registry Values (Key Editor)</span>
+                                <div id="registry-values-box" class="space-y-3 text-xs">
+                                    <div class="text-slate-500 italic py-8 text-center">-- Select a service endpoint from HKEY_LOCAL_MACHINE subkeys to view values --</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Need Help? Switch <strong>Guided Learning</strong> on to read step-by-step containment instructions.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">Why is log indexing crucial?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Incident Response Engine JavaScript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Threat flag solutions database
+        const flagSolutions = {
+            1: { flag: "CTF{l4g_an4lys1s_d3t3ct3d}", solved: false, value: 100 },
+            2: { flag: "CTF{c0nt41nm3nt_pr0t0c0l_3ff3ct1v3}", solved: false, value: 100 },
+            3: { flag: "CTF{reg_1ntrusi0n_detected}", solved: false, value: 100 }
+        };
+
+        const accessLogs = [
+            { ip: "192.168.1.10", time: "02/Jul/2026:11:01:22", req: "GET /index.html HTTP/1.1", status: 200, size: 4096 },
+            { ip: "192.168.1.55", time: "02/Jul/2026:11:02:45", req: "GET /assets/style.css HTTP/1.1", status: 200, size: 8520 },
+            { ip: "192.168.4.150", time: "02/Jul/2026:11:03:12", req: "GET /product.php?id=1 HTTP/1.1", status: 200, size: 430 },
+            { ip: "192.168.4.150", time: "02/Jul/2026:11:04:01", req: "GET /product.php?id=1'-- HTTP/1.1", status: 500, size: 284 },
+            { ip: "192.168.1.20", time: "02/Jul/2026:11:04:32", req: "GET /favicon.ico HTTP/1.1", status: 200, size: 1042 },
+            { ip: "192.168.4.150", time: "02/Jul/2026:11:05:12", req: "GET /product.php?id=1%20UNION%20SELECT%201,base64_decode('Q1RGe2w0Z19hbjRseXMxc19kM3QzY3QzZH0='),3 HTTP/1.1", status: 200, size: 452 },
+            { ip: "192.168.1.10", time: "02/Jul/2026:11:05:45", req: "GET /dashboard.php HTTP/1.1", status: 302, size: 120 }
+        ];
+
+        let processList = [
+            { pid: 4, name: "System", cpu: "1%", path: "Kernel NT Space", state: "Active" },
+            { pid: 612, name: "svchost.exe", cpu: "1%", path: "C:\\Windows\\System32\\svchost.exe", state: "Active" },
+            { pid: 1402, name: "explorer.exe", cpu: "2%", path: "C:\\Windows\\explorer.exe", state: "Active" },
+            { pid: 3412, name: "win_crypto_update.exe", cpu: "98%", path: "C:\\Users\\Public\\Temp\\win_crypto_update.exe", state: "Active" },
+            { pid: 2104, name: "chrome.exe", cpu: "3%", path: "C:\\Program Files\\Chrome\\chrome.exe", state: "Active" }
+        ];
+
+        let ransomwarePidKilled = false;
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: SOC Web Log Auditor",
+                concept: `Web access log auditing allows investigators to trace client transactions. Adversaries often send structured SQL payloads inside HTTP GET queries. Detecting abnormally large HTTP 500 error outputs followed by successful UNION attempts reveals intrusion details.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Type <strong class="text-white font-mono">UNION</strong> or <strong class="text-white font-mono">192.168.4.150</strong> inside the Filter box above to drill down into logs.</li>
+                    <li>Look at the filtered request column. Notice the base64 string inside the parameters: <code class="bg-slate-950 px-1 py-0.5 rounded text-blue-400 font-mono">Q1RGe2w0Z19hbjRseXMxc19kM3QzY3QzZH0=</code>.</li>
+                    <li>Copy that exact base64 parameter code.</li>
+                    <li>Paste it into the **Base64 Payload Decoder** below and click "Decode String" to read the flag!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Process Containment & Eradication",
+                concept: `When ransomware strikes a host, immediate process isolation prevents further file damage. Attackers often masquerade malicious programs as normal updates (e.g. ` + "`win_crypto_update.exe`" + `) and execute them from temporary, public directories with high CPU workloads.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Analyze the System Task Monitor process path values. Notice the rogue process executing out of a temporary public directory path.</li>
+                    <li>Click <strong class="text-white">Kill Process</strong> next to the malicious thread (PID <strong class="text-amber-400">3412</strong>) to contain the threat.</li>
+                    <li>Now calculate the database decryption key. The recovery prompt states the decrypt code is equal to <strong class="text-white">PID &times; 3</strong>.</li>
+                    <li>Multiply the contained process ID by 3 ($3412 \times 3 = 10236$).</li>
+                    <li>Input <strong class="text-emerald-400 font-mono font-bold">10236</strong> into the Master Decryption key box to eradicate and restore hostage systems!</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Registry Backdoor Forensics",
+                concept: `To maintain system access even after reboots, hackers configure persistence mechanisms. The Windows Registry contains startup and service profiles (like <code class="text-slate-200">CurrentControlSet\\Services</code>) which automatically load services when the machine boots.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Navigate the simulated Registry Tree on the right.</li>
+                    <li>Click on <strong class="text-white">HKEY_LOCAL_MACHINE</strong> to expand folder registry nodes.</li>
+                    <li>Expand <strong class="text-white">SYSTEM &rarr; CurrentControlSet &rarr; Services</strong>.</li>
+                    <li>Click on the anomalous <strong class="text-red-400">WannaScream</strong> service.</li>
+                    <li>Check the key attribute value list. Look closely at the data configurations to identify the persistence flag!</li>
+                </ol>`
+            }
+        };
+
+        // Window Initial Load Lifecycle
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+            setupLogTable();
+            setupProcessTable();
+
+            // Set up guided mode toggle
+            const guidedBtn = document.getElementById('guided-mode-btn');
+            guidedBtn.addEventListener('click', () => {
+                isGuidedMode = !isGuidedMode;
+                guidedBtn.className = isGuidedMode 
+                    ? "flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    : "flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all";
+                guidedBtn.innerHTML = isGuidedMode 
+                    ? `<span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>GUIDED LEARNING ON`
+                    : `<span class="w-2 h-2 rounded-full bg-slate-500"></span>GUIDED LEARNING OFF`;
+                
+                switchChallenge(activeChallenge);
+            });
+        });
+
+        // Toast Engine (replaces window alerts)
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-blue-500/20 text-blue-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Active workspace switcher
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+            const promptLabel = document.getElementById('prompt-label');
+
+            if (challengeNum === 1) {
+                workspaceTitle.textContent = "WORKSPACE: Web Server Log Auditor";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> responder@log-analyzer:~$`;
+            } else if (challengeNum === 2) {
+                workspaceTitle.textContent = "WORKSPACE: Host Process Containment Control";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> responder@mitigation-box:~$`;
+            } else if (challengeNum === 3) {
+                workspaceTitle.textContent = "WORKSPACE: Offline Windows Registry Analyzer";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> responder@forensics-suite:~$`;
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-c${i}`);
+                const ws = document.getElementById(`ws-c${i}`);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 01-1.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Analyze raw forensic images, access databases, and mitigate attacks using only standard SOC operations.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-blue-400 hover:text-blue-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================= CHALLENGE 1: LOG AUDITING =================
+        function setupLogTable(filterTerm = "") {
+            const tbody = document.getElementById('log-table-body');
+            tbody.innerHTML = '';
+
+            let filteredLogs = accessLogs;
+            if (filterTerm.trim() !== "") {
+                const query = filterTerm.toLowerCase().trim();
+                filteredLogs = accessLogs.filter(log => 
+                    log.ip.includes(query) || 
+                    log.req.toLowerCase().includes(query) || 
+                    log.status.toString().includes(query)
+                );
+            }
+
+            filteredLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/30 transition border-b border-slate-850";
+                
+                let highlightClass = "text-slate-300";
+                if (log.req.includes("UNION")) highlightClass = "text-amber-400 font-bold bg-amber-500/5";
+                if (log.status === 500) highlightClass = "text-red-400 bg-red-500/5";
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 font-mono">${log.ip}</td>
+                    <td class="p-3 text-slate-500 font-mono">${log.time}</td>
+                    <td class="p-3 ${highlightClass} font-mono max-w-md truncate" title="${escapeHTML(log.req)}">${escapeHTML(log.req)}</td>
+                    <td class="p-3 font-mono">${log.status}</td>
+                    <td class="p-3 text-slate-500 font-mono">${log.size}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyLogFilter() {
+            const query = document.getElementById('log-filter').value;
+            setupLogTable(query);
+            notify("Log Stream Filtered", `Audit index refined. Displaying records matching: "${query}"`, "info");
+        }
+
+        function decodeBase64Payload() {
+            const payload = document.getElementById('b64-input').value.trim();
+            const outputBox = document.getElementById('b64-output');
+
+            if (!payload) {
+                notify("Decoding Error", "Please provide a valid Base64 encoded query.", "error");
+                return;
+            }
+
+            try {
+                const decoded = atob(payload);
+                outputBox.className = "bg-slate-950 border border-emerald-500/20 p-3 rounded-lg text-xs code-font text-emerald-400 font-bold";
+                outputBox.textContent = `Decoded: ${decoded}`;
+                notify("Payload Decoded", "Base64 payload converted successfully.", "success");
+            } catch (e) {
+                outputBox.className = "bg-slate-950 border border-red-500/20 p-3 rounded-lg text-xs code-font text-red-400";
+                outputBox.textContent = "Error: Invalid base64 sequence. Please verify parameter syntax.";
+                notify("Decoding Failed", "String verification failed. Ensure valid Base64 characters.", "error");
+            }
+        }
+
+        // ================= CHALLENGE 2: PROCESS MITIGATION & RESTORE =================
+        function setupProcessTable() {
+            const tbody = document.getElementById('process-table-body');
+            tbody.innerHTML = '';
+
+            processList.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/30 transition border-b border-slate-850";
+                
+                let pathHighlight = "text-slate-400";
+                let nameHighlight = "text-slate-300";
+                let killButton = `<button onclick="killActiveProcess(${p.pid})" class="bg-red-600/20 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white px-3 py-1 rounded-md text-[10px] font-bold transition">Kill Process</button>`;
+                
+                if (p.name.includes("update") && p.state === "Active") {
+                    pathHighlight = "text-amber-400 font-semibold";
+                    nameHighlight = "text-amber-400 font-bold";
+                }
+
+                if (p.state === "Terminated") {
+                    killButton = `<span class="bg-slate-850 border border-slate-800 text-slate-500 px-3 py-1 rounded-md text-[10px] font-mono font-bold">TERMINATED</span>`;
+                    pathHighlight = "text-slate-600 line-through";
+                    nameHighlight = "text-slate-600 line-through";
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-500 font-mono">${p.pid}</td>
+                    <td class="p-3 font-semibold ${nameHighlight}">${p.name}</td>
+                    <td class="p-3 text-slate-500 font-mono">${p.cpu}</td>
+                    <td class="p-3 ${pathHighlight} font-mono">${p.path}</td>
+                    <td class="p-3 text-right">${killButton}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function killActiveProcess(pid) {
+            const process = processList.find(p => p.pid === pid);
+            if (process) {
+                if (pid === 3412) {
+                    process.state = "Terminated";
+                    process.cpu = "0%";
+                    ransomwarePidKilled = true;
+                    setupProcessTable();
+                    
+                    const diag = document.getElementById('decrypt-output');
+                    diag.className = "bg-slate-900 border border-amber-500/20 p-4 rounded-lg text-amber-400 code-font text-xs text-left whitespace-pre";
+                    diag.textContent = `[CONTAINMENT LOGS]\n[*] PID 3412 (win_crypto_update.exe) has been terminated successfully.\n[*] File system lock protocol has been frozen.\n[*] System ready to receive decryption key value parameters...`;
+                    
+                    notify("Threat Contained!", "Ransomware process terminated. Compute decryption parameters to proceed.", "success");
+                } else {
+                    notify("Containment Blocked", "That is a system-critical process! Killing it will cause system crash.", "error");
+                }
+            }
+        }
+
+        function attemptDatabaseRestore() {
+            const inputCode = parseInt(document.getElementById('decrypt-key-input').value);
+            const diag = document.getElementById('decrypt-output');
+
+            if (!ransomwarePidKilled) {
+                notify("Remediation Blocked", "Ransomware process is still running! Contain the threat before decrypting.", "error");
+                return;
+            }
+
+            if (inputCode === 10236) { // 3412 * 3 = 10236
+                diag.className = "bg-slate-900 border border-emerald-500/30 p-4 rounded-lg text-emerald-400 code-font text-sm font-bold text-center";
+                diag.innerHTML = `
+                    <div class="space-y-1.5 text-left">
+                        <span class="block text-xs uppercase tracking-widest text-slate-400">Database Restoration Logs:</span>
+                        <span class="block mt-1 font-mono text-emerald-400">✔ Ransomware process eliminated.</span>
+                        <span class="block font-mono text-emerald-400">✔ File decryption complete. Master records decrypted.</span>
+                        <span class="block text-white font-mono mt-2 bg-slate-950 p-2.5 rounded border border-slate-800">Flag Sequence: CTF{c0nt41nm3nt_pr0t0c0l_3ff3ct1v3}</span>
+                    </div>
+                `;
+                notify("Database Restored!", "Decryption values match. Database system recovered successfully!", "success");
+            } else {
+                notify("Decryption Failed", "Master key verification failed. Re-evaluate PID multiplier calculation.", "error");
+            }
+        }
+
+        // ================= CHALLENGE 3: WINDOWS REGISTRY FORENSICS =================
+        function expandRegistryNode(nodeId) {
+            let targetDiv = null;
+            if (nodeId === 'hklm') targetDiv = document.getElementById('reg-subfolders');
+            else if (nodeId === 'hklm-system') targetDiv = document.getElementById('reg-system-sub');
+            else if (nodeId === 'hklm-system-ccs') targetDiv = document.getElementById('reg-ccs-sub');
+            else if (nodeId === 'hklm-system-ccs-services') targetDiv = document.getElementById('reg-services-sub');
+
+            if (targetDiv) {
+                targetDiv.classList.toggle('hidden');
+            }
+        }
+
+        function selectRegistryKey(serviceName) {
+            const valuesBox = document.getElementById('registry-values-box');
+            valuesBox.innerHTML = '';
+
+            if (serviceName === 'winrm') {
+                valuesBox.innerHTML = `
+                    <div class="space-y-1 bg-slate-950 p-3 rounded-lg border border-slate-850">
+                        <span class="text-slate-500 text-[10px] block">Key Path: HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinRM</span>
+                        <table class="w-full text-left font-mono text-[10px]">
+                            <tr class="text-slate-500 border-b border-slate-900"><th class="pb-1">Value Name</th><th class="pb-1">Type</th><th class="pb-1">Value Data</th></tr>
+                            <tr><td class="py-1">DisplayName</td><td>REG_SZ</td><td class="text-slate-300">Windows Remote Management</td></tr>
+                            <tr><td class="py-1">ImagePath</td><td>REG_EXPAND_SZ</td><td class="text-slate-300">%SystemRoot%\\System32\\svchost.exe -k netsvcs</td></tr>
+                            <tr><td class="py-1">Start</td><td>REG_DWORD</td><td class="text-slate-300">0x00000003 (Demands-start)</td></tr>
+                        </table>
+                    </div>
+                `;
+                notify("WinRM Registry Read", "Standard service parameters audited.", "info");
+            } 
+            else if (serviceName === 'spooler') {
+                valuesBox.innerHTML = `
+                    <div class="space-y-1 bg-slate-950 p-3 rounded-lg border border-slate-850">
+                        <span class="text-slate-500 text-[10px] block">Key Path: HKLM\\SYSTEM\\CurrentControlSet\\Services\\Spooler</span>
+                        <table class="w-full text-left font-mono text-[10px]">
+                            <tr class="text-slate-500 border-b border-slate-900"><th class="pb-1">Value Name</th><th class="pb-1">Type</th><th class="pb-1">Value Data</th></tr>
+                            <tr><td class="py-1">DisplayName</td><td>REG_SZ</td><td class="text-slate-300">Print Spooler</td></tr>
+                            <tr><td class="py-1">ImagePath</td><td>REG_EXPAND_SZ</td><td class="text-slate-300">%SystemRoot%\\System32\\spoolsv.exe</td></tr>
+                            <tr><td class="py-1">Start</td><td>REG_DWORD</td><td class="text-slate-300">0x00000002 (Auto-start)</td></tr>
+                        </table>
+                    </div>
+                `;
+                notify("Spooler Registry Read", "Standard print services verified.", "info");
+            } 
+            else if (serviceName === 'wannascream') {
+                valuesBox.innerHTML = `
+                    <div class="space-y-2 bg-slate-950 p-3 rounded-lg border border-red-500/20">
+                        <span class="text-red-400 text-[10px] block font-bold">WARNING: Anomalous Service Registry Keys Detected!</span>
+                        <table class="w-full text-left font-mono text-[10px]">
+                            <tr class="text-slate-500 border-b border-slate-900"><th class="pb-1">Value Name</th><th class="pb-1">Type</th><th class="pb-1">Value Data</th></tr>
+                            <tr><td class="py-1">DisplayName</td><td>REG_SZ</td><td class="text-red-300">WannaScream Backdoor Service</td></tr>
+                            <tr><td class="py-1 text-emerald-400">SecretFlag</td><td>REG_SZ</td><td class="text-emerald-400 font-bold">CTF{reg_1ntrusi0n_detected}</td></tr>
+                            <tr><td class="py-1">ImagePath</td><td>REG_EXPAND_SZ</td><td class="text-red-300">%Public%\\Temp\\backdoor_listener.exe --port 4444</td></tr>
+                            <tr><td class="py-1">Start</td><td>REG_DWORD</td><td class="text-red-300">0x00000002 (Persistent Auto-start)</td></tr>
+                        </table>
+                    </div>
+                `;
+                notify("Anomalous Key Audited", "Malicious persistent service verified. Flag identified inside keys!", "success");
+            }
+        }
+
+        // Helper to escape HTML characters
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This threat is already resolved.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("THREAT MITIGATED!", `Excellent responder action! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag. Audit threat records and payloads before submitting.";
+                notify("Remediation Rejected", "Flag value does not match current threat indicators.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Incident Response", 
+                "Incident Responders log, analyze, contain, and recover from cybersecurity events to limit organizational and financial damage.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>

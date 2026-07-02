@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Active Enumeration Practice Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-500 text-slate-950 p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-amber-500/20">
+                RECON / ENUM
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>CTF Recon Arena</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Target Discovery, Port Auditing & Resource Fuzzing</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-amber-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Explanations & Mission Playbook -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-amber-400 uppercase tracking-widest mb-1">Investigation Brief</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    Enumeration is the systematic phase of identifying entry points into a target system. Rather than firing random exploits, professional analysts scan active ports, search directories for hidden backups, and crawl subdomains to locate high-probability vectors.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Select Scanning Target</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-amber-400 transition">Port & Service Audit</h4>
+                                <p class="text-xs text-slate-400">Map active listeners with Nmap</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Hidden Directory Fuzzing</h4>
+                                <p class="text-xs text-slate-400">Brute-force directories with Gobuster</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Subdomain Enumeration</h4>
+                                <p class="text-xs text-slate-400">Scan DNS records and virtual hosts</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Extracted Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        recon-operator@scout-host:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Nmap Port Auditor</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- ================= CHALLENGE 1: PORT SCANNER (NMAP) ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target IP Node: <span class="code-font text-amber-400">10.10.189.50</span></h3>
+                        <p class="text-xs text-slate-400">An unknown host is connected to the local lab subnet. Choose scanning parameters to trace listeners, service names, and discover the path to obtain system information.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Nmap Scan Config -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Scan Engine Configurations</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Target Address Input:</label>
+                                    <input id="nmap-target" type="text" value="10.10.189.50" disabled class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 code-font text-amber-400 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Scan Type Selector:</label>
+                                    <select id="nmap-type" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded px-3 py-2 code-font outline-none focus:border-amber-500">
+                                        <option value="sT">nmap -sT (Classic TCP Connect Scan)</option>
+                                        <option value="sV">nmap -sV (Service Version Detection)</option>
+                                        <option value="A">nmap -A (Aggressive Scan with Script Engine)</option>
+                                    </select>
+                                </div>
+                                <button onclick="runNmapScan()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-amber-500/10">
+                                    Fire Nmap Scan
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Target Port Matrix Map -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Audited Ports Map</span>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div id="port-card-21" class="border border-slate-800 bg-slate-950/60 p-2.5 rounded-lg flex flex-col justify-between">
+                                    <span class="text-slate-500 font-mono">Port 21 (FTP)</span>
+                                    <span id="port-status-21" class="font-bold text-slate-400 text-[10px]">UNSCANNED</span>
+                                </div>
+                                <div id="port-card-22" class="border border-slate-800 bg-slate-950/60 p-2.5 rounded-lg flex flex-col justify-between">
+                                    <span class="text-slate-500 font-mono">Port 22 (SSH)</span>
+                                    <span id="port-status-22" class="font-bold text-slate-400 text-[10px]">UNSCANNED</span>
+                                </div>
+                                <div id="port-card-80" class="border border-slate-800 bg-slate-950/60 p-2.5 rounded-lg flex flex-col justify-between">
+                                    <span class="text-slate-500 font-mono">Port 80 (HTTP)</span>
+                                    <span id="port-status-80" class="font-bold text-slate-400 text-[10px]">UNSCANNED</span>
+                                </div>
+                                <div id="port-card-445" class="border border-slate-800 bg-slate-950/60 p-2.5 rounded-lg flex flex-col justify-between">
+                                    <span class="text-slate-500 font-mono">Port 445 (SMB)</span>
+                                    <span id="port-status-445" class="font-bold text-slate-400 text-[10px]">UNSCANNED</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Terminal Output -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Stdout Console Terminal</span>
+                        <div id="nmap-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-44 overflow-y-auto whitespace-pre-wrap">
+-- Ready to scan --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: DIRECTORY FUZZING (GOBUSTER) ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Domain Web Server: <span class="code-font text-amber-400">http://secure-node-b.ctf</span></h3>
+                        <p class="text-xs text-slate-400">This secure web app hides vital configuration settings outside standard links. Select an enumerating wordlist and start Gobuster directory fuzzing to hunt down concealed paths.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Fuzz Config -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Fuzzer Configuration</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Wordlist Selection:</label>
+                                    <select id="gobuster-list" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded px-3 py-2 code-font outline-none focus:border-amber-500">
+                                        <option value="common">common_paths.txt (10 words)</option>
+                                        <option value="directory-medium">directory-list-2.3-medium.txt (30 words)</option>
+                                    </select>
+                                </div>
+                                <button onclick="runGobuster()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-amber-500/10">
+                                    Execute Fuzzing Campaign
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar & Stats -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Campaign Status</span>
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Estimated Requests:</span>
+                                        <span id="gobuster-req-count" class="font-bold text-slate-300">0 / 0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Execution Speed:</span>
+                                        <span class="font-bold text-emerald-400">120 req/sec</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="flex justify-between text-[10px] text-slate-500 mb-1 font-mono">
+                                    <span>PROGRESS BAR</span>
+                                    <span id="gobuster-percent">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-950 rounded-full h-2 border border-slate-800 overflow-hidden">
+                                    <div id="gobuster-progress" class="bg-amber-500 h-full w-0 transition-all duration-150"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fuzz Output Terminal -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Gobuster Live Logs</span>
+                        <div id="gobuster-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-44 overflow-y-auto whitespace-pre-wrap">
+-- Waiting to start fuzzing campaign --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: DNS ENUMERATION ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">DNS Audit Zone: <span class="code-font text-amber-400">corp-internal.net</span></h3>
+                        <p class="text-xs text-slate-400">We want to map out internal domain architecture. Execute DNS recon (A, TXT, MX records) or run virtual subdomain dictionary fuzzing to expose administrative gateways.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- DNS Recon Tools -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Active Enumerators</span>
+                            
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <button onclick="runDnsRecon('txt')" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/30 text-slate-300 py-3 px-2 rounded-xl transition text-center font-semibold">
+                                    Query TXT Records
+                                </button>
+                                <button onclick="runDnsRecon('mx')" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/30 text-slate-300 py-3 px-2 rounded-xl transition text-center font-semibold">
+                                    Query MX Mail Records
+                                </button>
+                                <button onclick="runDnsRecon('subdomains')" class="col-span-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-amber-500/10">
+                                    Perform Subdomain Dictionary Fuzzing
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- DNS Visual Records Board -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Exposed Subdomains Directory</span>
+                                <div id="dns-zone-records" class="space-y-1.5 text-xs h-36 overflow-y-auto pr-1">
+                                    <div class="text-slate-500 italic text-center py-8">-- Run DNS queries to discover resource registers --</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Terminal -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">DNS Lookup Logs</span>
+                        <div id="dns-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap">
+-- Ready to receive name queries --
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Stuck? Toggle <strong>Guided Learning</strong> or run aggressive scans to fetch service indicators.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">Why is active scanning critical?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Engine & Cryptographic Math Javascript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Challenge flag registry
+        const flagSolutions = {
+            1: { flag: "CTF{nmap_v3rs10n_sc4n_succ3ss}", solved: false, value: 100 },
+            2: { flag: "CTF{gobust_h1dd3n_d1r_unv31l}", solved: false, value: 100 },
+            3: { flag: "CTF{dns_r3c0n_subd0m_l34k}", solved: false, value: 100 }
+        };
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: Nmap Port & Service Auditing",
+                concept: `Network Port Auditing allows hackers to identify active gates. <strong class="text-slate-200">TCP Connect</strong> scans determine whether a port is open, while <strong class="text-slate-200">Service Version scans (-sV)</strong> actively poll standard services for banners to identify unpatched programs.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Start by selecting the <strong class="text-white">TCP Connect Scan (-sT)</strong> to discover which ports are active.</li>
+                    <li>Observe the open ports. You'll see <strong class="text-white">Port 21 (FTP)</strong>, <strong class="text-white">Port 22 (SSH)</strong>, and others on target host <strong class="text-amber-400">10.10.189.50</strong>.</li>
+                    <li>Now run <strong class="text-white">Service Version Detection (-sV)</strong> or <strong class="text-white">Aggressive Scan (-A)</strong> to gather system banners.</li>
+                    <li>Inspect the scan outputs closely. Notice the service version output on <strong class="text-white">Port 21</strong> allows Anonymous logins, printing the first flag directly to stdout!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Gobuster Directory Fuzzing",
+                concept: `Many websites host configuration files, database backups, or administrative scripts without standard links pointing to them. <strong class="text-slate-200 font-semibold">Web Fuzzing</strong> sends hundreds of requests from a text dictionary to identify resources.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Choose a dictionary. The <strong class="text-white">common_paths.txt</strong> is very small and fast, while the <strong class="text-white font-mono">medium list</strong> yields deeper listings.</li>
+                    <li>Select <strong class="text-white">directory-list-2.3-medium.txt</strong> and click <strong class="text-white">Execute Fuzzing Campaign</strong>.</li>
+                    <li>Wait for the scan to complete. Review directories showing a <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 font-mono">200 OK</code> response code.</li>
+                    <li>Notice a hit at <code class="bg-slate-950 px-1 py-0.5 rounded text-amber-400 font-mono">/dev_backup</code>. Explore the logged endpoints to recover the flag.</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: DNS Domain & Subdomain Enumeration",
+                concept: `Organizations use complex DNS domains to route traffic. Querying TXT records, MX records, or brute-forcing subdomains with specialized dictionary lookups uncovers hidden staging assets and API routes.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Begin by scanning the raw Zone configurations. Click <strong class="text-white">Query TXT Records</strong> to look for technical verification tags.</li>
+                    <li>Next, click <strong class="text-white">Perform Subdomain Dictionary Fuzzing</strong> to scan corp-internal.net for hidden virtual subdomains.</li>
+                    <li>Look at the exposed results board. Analyze the discovered portals to find where staging configurations leak the third flag string.</li>
+                </ol>`
+            }
+        };
+
+        // Window load setups
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+
+            const guidedBtn = document.getElementById('guided-mode-btn');
+            guidedBtn.addEventListener('click', () => {
+                isGuidedMode = !isGuidedMode;
+                guidedBtn.className = isGuidedMode 
+                    ? "flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    : "flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all";
+                guidedBtn.innerHTML = isGuidedMode 
+                    ? `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>GUIDED LEARNING ON`
+                    : `<span class="w-2 h-2 rounded-full bg-slate-500"></span>GUIDED LEARNING OFF`;
+                
+                switchChallenge(activeChallenge);
+            });
+        });
+
+        // Toast Messages
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-amber-500/20 text-amber-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Switch workspace displays
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+
+            if (challengeNum === 1) workspaceTitle.textContent = "WORKSPACE: Nmap Port Auditor";
+            else if (challengeNum === 2) workspaceTitle.textContent = "WORKSPACE: Gobuster Directory Fuzzer";
+            else if (challengeNum === 3) workspaceTitle.textContent = "WORKSPACE: DNS Subdomain Map";
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-c${i}`);
+                const ws = document.getElementById(`ws-c${i}`);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 01-1.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543-7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Scan these environments independently using target inputs in each active sandbox viewport.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-amber-400 hover:text-amber-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================= CHALLENGE 1: PORT SCANNER (NMAP) =================
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function runNmapScan() {
+            const scanType = document.getElementById('nmap-type').value;
+            const term = document.getElementById('nmap-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-emerald-400 code-font text-xs h-44 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+            
+            // Set ports status elements
+            const updatePort = (id, label, borderClass) => {
+                const card = document.getElementById(`port-card-${id}`);
+                const status = document.getElementById(`port-status-${id}`);
+                status.textContent = label;
+                card.className = `border ${borderClass} bg-slate-900/40 p-2.5 rounded-lg flex flex-col justify-between transition-all`;
+            };
+
+            term.textContent = `Starting Nmap 7.92 ( https://nmap.org ) at 2026-07-02 12:20 UTC\n`;
+            await sleep(500);
+            term.textContent += `Initiating ARP Ping Scan against 10.10.189.50 [1 port]\n`;
+            await sleep(400);
+            term.textContent += `Completed ARP Ping Scan at 0.05s elapsed (1 host up)\n`;
+            
+            if (scanType === 'sT') {
+                term.textContent += `Initiating Parallel DNS resolution of 1 IP... Completed\n`;
+                await sleep(500);
+                term.textContent += `Initiating TCP Connect Scan against 10.10.189.50...\n`;
+                await sleep(800);
+                term.textContent += `Discovered open port 21/tcp\n`;
+                updatePort(21, "OPEN", "border-emerald-500/40");
+                await sleep(300);
+                term.textContent += `Discovered open port 22/tcp\n`;
+                updatePort(22, "OPEN", "border-emerald-500/40");
+                await sleep(300);
+                term.textContent += `Discovered open port 80/tcp\n`;
+                updatePort(80, "OPEN", "border-emerald-500/40");
+                await sleep(300);
+                term.textContent += `Discovered open port 445/tcp\n`;
+                updatePort(445, "OPEN", "border-emerald-500/40");
+                
+                await sleep(400);
+                term.textContent += `\nPORT    STATE SERVICE\n21/tcp  open  ftp\n22/tcp  open  ssh\n80/tcp  open  http\n445/tcp open  microsoft-ds\n\nNmap done: 1 IP address (1 host up) scanned in 2.38 seconds`;
+                notify("Ports Mapped!", "Ports identified. Try a Service Version scan (-sV) to probe service layers.", "info");
+            } 
+            else if (scanType === 'sV') {
+                term.textContent += `Initiating Service Scan against 10.10.189.50...\n`;
+                await sleep(1000);
+                updatePort(21, "vsftpd 3.0.3 (Anon allowed!)", "border-amber-500/40");
+                updatePort(22, "OpenSSH 8.2p1 Ubuntu", "border-slate-800");
+                updatePort(80, "Apache/2.4.41", "border-slate-800");
+                updatePort(445, "Samba 4.3.11", "border-slate-800");
+                
+                term.textContent += `\nPORT    STATE SERVICE     VERSION\n`;
+                term.textContent += `21/tcp  open  ftp         vsftpd 3.0.3 (Anonymous login allowed!)\n`;
+                term.textContent += `22/tcp  open  ssh         OpenSSH 8.2p1 Ubuntu (protocol 2.0)\n`;
+                term.textContent += `80/tcp  open  http        Apache httpd 2.4.41\n`;
+                term.textContent += `445/tcp open  netbios-ssn Samba smbd 4.3.11\n\n`;
+                term.textContent += `Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel`;
+                notify("Service Version Extracted!", "Anonymous FTP enabled detected. Try aggressive scripts.", "info");
+            } 
+            else if (scanType === 'A') {
+                term.textContent += `Initiating Aggressive Script Audit Scan...\n`;
+                await sleep(1200);
+                updatePort(21, "vsftpd 3.0.3 (ANONYMOUS INFILTRATED)", "border-emerald-500/50 shadow-md shadow-emerald-500/10");
+                updatePort(22, "OpenSSH 8.2p1", "border-slate-800");
+                updatePort(80, "Apache/2.4.41", "border-slate-800");
+                updatePort(445, "Samba 4.3.11", "border-slate-800");
+
+                term.textContent += `\nPORT    STATE SERVICE VERSION\n`;
+                term.textContent += `21/tcp  open  ftp     vsftpd 3.0.3\n`;
+                term.textContent += `|_ftp-anon: Anonymous FTP login allowed (FTP code 230)\n`;
+                term.textContent += `| -rw-r--r-- 1 ftp ftp 43 Jul 02 12:20 flag.txt\n`;
+                term.textContent += `|   Contents of flag.txt: CTF{nmap_v3rs10n_sc4n_succ3ss}\n`;
+                term.textContent += `22/tcp  open  ssh     OpenSSH 8.2p1 Ubuntu\n`;
+                term.textContent += `80/tcp  open  http    Apache httpd 2.4.41\n`;
+                term.textContent += `445/tcp open  smb     Samba smbd 4.3.11\n\n`;
+                term.textContent += `Aggressive Script Engine Scan finished successfully.`;
+                notify("Anonymous Login Read Successful!", "We logged in as FTP anonymous and dumped the flag!", "success");
+            }
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // ================= CHALLENGE 2: GOBUSTER FUZZING =================
+        async function runGobuster() {
+            const listType = document.getElementById('gobuster-list').value;
+            const term = document.getElementById('gobuster-terminal');
+            const percentLabel = document.getElementById('gobuster-percent');
+            const progress = document.getElementById('gobuster-progress');
+            const reqLabel = document.getElementById('gobuster-req-count');
+
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-indigo-400 code-font text-xs h-44 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+            term.textContent = `===============================================================\n`;
+            term.textContent += `Gobuster v3.1.0\n`;
+            term.textContent += `by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)\n`;
+            term.textContent += `===============================================================\n`;
+            term.textContent += `[+] Url:                     http://secure-node-b.ctf\n`;
+            term.textContent += `[+] Method:                  GET\n`;
+            term.textContent += `[+] Wordlist:                ${listType === 'common' ? 'common_paths.txt' : 'directory-list-2.3-medium.txt'}\n`;
+            term.textContent += `===============================================================\n`;
+            
+            await sleep(600);
+
+            let maxRequests = listType === 'common' ? 10 : 30;
+            let currentRequest = 0;
+            progress.style.width = "0%";
+            percentLabel.textContent = "0%";
+
+            const mockHits = {
+                'common': [
+                    { path: "/index.html", status: 200, size: 284 },
+                    { path: "/assets", status: 301, size: 41 },
+                    { path: "/login", status: 200, size: 1042 }
+                ],
+                'directory-medium': [
+                    { path: "/index.html", status: 200, size: 284 },
+                    { path: "/assets", status: 301, size: 41 },
+                    { path: "/login", status: 200, size: 1042 },
+                    { path: "/dev_backup", status: 200, size: 4120 },
+                    { path: "/dev_backup/backup.txt", status: 200, size: 124 }
+                ]
+            };
+
+            const hits = mockHits[listType];
+            let hitIndex = 0;
+
+            for (let step = 1; step <= maxRequests; step++) {
+                await sleep(100);
+                currentRequest = step;
+                reqLabel.textContent = `${currentRequest} / ${maxRequests}`;
+                
+                let percent = Math.floor((currentRequest / maxRequests) * 100);
+                percentLabel.textContent = `${percent}%`;
+                progress.style.width = `${percent}%`;
+
+                // Render directory hits dynamically as steps proceed
+                let targetHitChance = Math.floor(maxRequests / hits.length);
+                if (step % targetHitChance === 0 && hitIndex < hits.length) {
+                    const hit = hits[hitIndex];
+                    let statusColor = hit.status === 200 ? "Status: 200" : "Status: 301";
+                    term.textContent += `\n[+] Found: ${hit.path} (Status: ${hit.status}) [Size: ${hit.size}]`;
+                    if (hit.path === "/dev_backup/backup.txt") {
+                        term.textContent += `\n    |----> [READ_SUCCESS] File content logged: "CTF{gobust_h1dd3n_d1r_unv31l}"`;
+                        notify("Directory Discovered!", "We reached an exposed config backup file. Flag decrypted!", "success");
+                    }
+                    hitIndex++;
+                }
+                term.scrollTop = term.scrollHeight;
+            }
+
+            term.textContent += `\n\n===============================================================\n`;
+            term.textContent += `Fuzzing campaign completed.\n`;
+            term.textContent += `===============================================================\n`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // ================= CHALLENGE 3: DNS ENUMERATION =================
+        const dnsDatabase = {
+            'txt': [
+                { record: "corp-internal.net", type: "TXT", val: "v=spf1 include:_spf.corp-internal.net ~all" },
+                { record: "corp-internal.net", type: "TXT", val: "verify-token=google-site-verification-93kd91as" },
+                { record: "corp-internal.net", type: "TXT", val: "security-note=Check dev subdomains for API endpoints" }
+            ],
+            'mx': [
+                { record: "corp-internal.net", type: "MX", val: "10 mail-relay-a.corp-internal.net" },
+                { record: "corp-internal.net", type: "MX", val: "20 mail-relay-b.corp-internal.net" }
+            ],
+            'subdomains': [
+                { record: "www.corp-internal.net", type: "A", val: "10.10.12.1" },
+                { record: "mail.corp-internal.net", type: "A", val: "10.10.12.10" },
+                { record: "staging-api.corp-internal.net", type: "A", val: "10.10.99.12 (HTTP 200 Open Directory!)" },
+                { record: "staging-api.corp-internal.net", type: "TXT", val: "Endpoint: /v2/secret_keys" },
+                { record: "staging-api.corp-internal.net", type: "TXT", val: "Flag: CTF{dns_r3c0n_subd0m_l34k}" }
+            ]
+        };
+
+        async function runDnsRecon(mode) {
+            const term = document.getElementById('dns-terminal');
+            const recordsBoard = document.getElementById('dns-zone-records');
+
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-teal-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+            
+            if (mode === 'txt') {
+                term.textContent = ">>> Querying DNS TXT Records for 'corp-internal.net'...\n";
+                await sleep(500);
+                recordsBoard.innerHTML = '';
+                
+                dnsDatabase.txt.forEach(item => {
+                    term.textContent += `\n[DNS ANSWER] ${item.record}  IN  TXT  "${item.val}"`;
+                    
+                    const el = document.createElement('div');
+                    el.className = "bg-slate-900 border border-slate-800 p-2 rounded-lg font-mono text-[10px] space-y-0.5";
+                    el.innerHTML = `<span class="text-slate-500">${item.type}</span> <span class="text-teal-400 font-bold">${item.record}</span> <p class="text-slate-300">${item.val}</p>`;
+                    recordsBoard.appendChild(el);
+                });
+                notify("TXT Zone Discovered", "Domain records queried successfully.", "success");
+            } 
+            else if (mode === 'mx') {
+                term.textContent = ">>> Querying DNS MX Mail Records for 'corp-internal.net'...\n";
+                await sleep(500);
+                recordsBoard.innerHTML = '';
+
+                dnsDatabase.mx.forEach(item => {
+                    term.textContent += `\n[DNS ANSWER] ${item.record}  IN  MX  "${item.val}"`;
+                    
+                    const el = document.createElement('div');
+                    el.className = "bg-slate-900 border border-slate-800 p-2 rounded-lg font-mono text-[10px] space-y-0.5";
+                    el.innerHTML = `<span class="text-slate-500">${item.type}</span> <span class="text-teal-400 font-bold">${item.record}</span> <p class="text-slate-300">${item.val}</p>`;
+                    recordsBoard.appendChild(el);
+                });
+                notify("MX Mail Gateways mapped", "Email relays logged.", "success");
+            } 
+            else if (mode === 'subdomains') {
+                term.textContent = ">>> Performing Virtual Subdomain Dictionary scan against 'corp-internal.net'...\n";
+                term.textContent += ">>> Testing 240 common virtual hosts...\n";
+                await sleep(800);
+                recordsBoard.innerHTML = '';
+
+                dnsDatabase.subdomains.forEach(item => {
+                    term.textContent += `\n[HOST DETECTED] ${item.record}  -->  Type: ${item.type}  -->  Value: ${item.val}`;
+                    
+                    const el = document.createElement('div');
+                    el.className = "bg-slate-900 border border-slate-800 p-2 rounded-lg font-mono text-[10px] space-y-0.5";
+                    el.innerHTML = `<span class="text-slate-500">${item.type}</span> <span class="text-amber-400 font-bold">${item.record}</span> <p class="text-slate-300 truncate">${item.val}</p>`;
+                    recordsBoard.appendChild(el);
+                });
+                notify("Virtual hosts discovered!", "staging-api host identified. Check logs to read flag content.", "success");
+            }
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This level's target is already completed.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("RECON LEVEL RESOLVED!", `Terrific enumeration! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag sequence. Inspect the trace outputs or directory spaces.";
+                notify("Verification Failed", "Flag did not match verification checks.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Active Enumeration Basics", 
+                "Active enumeration reveals physical, host-level architectures. A thorough enumeration phase resolves 90% of vulnerability identification bottlenecks.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>
