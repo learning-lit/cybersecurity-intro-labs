@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Incident Response & SOC Practice Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-blue-600/20">
+                BLUE TEAM
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>SOC Incident Command</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v2.0.2</span>
+                </h1>
+                <p class="text-xs text-slate-400">Threat Detection, Log Analysis & Cyber Forensics</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-blue-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Incident Response Guide, Playbooks & Submissions -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-1">SOC Threat Intel</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    Welcome to the SOC Log Analysis Simulator. To establish root causes, trace lateral movements, and gather forensic proof, you must parse and audit raw host logs. Hunt for the flags hidden in the system payloads.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Active Investigations</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-blue-400 transition">Web Server Audit</h4>
+                                <p class="text-xs text-slate-400">Nginx / Apache access logs</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Linux Authentication Audit</h4>
+                                <p class="text-xs text-slate-400">Host system auth.log parsing</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Firewall Traffic Analysis</h4>
+                                <p class="text-xs text-slate-400">DNS Exfiltration detection</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Threat Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive SOC Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span id="prompt-label" class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        analyst@soc-workstation:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Web Server Log Auditor</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- Search / Filter Log bar -->
+                <div class="flex gap-2 mb-4">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs code-font">Search Logs:</span>
+                        <input id="log-filter" type="text" placeholder="Filter by IP, Resource, Code or Keyword..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-28 pr-3 py-2.5 text-xs code-font outline-none focus:border-blue-500 transition-all text-slate-200" onkeyup="filterActiveLogs()">
+                    </div>
+                    <button onclick="clearFilters()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold transition">
+                        Clear
+                    </button>
+                </div>
+
+                <!-- ================= CHALLENGE 1: LOG ANALYSIS ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Resource: <span class="code-font text-blue-400">web_access.log</span></h3>
+                        <p class="text-xs text-slate-400">A threat actor is attempting to breach our web server using Path Traversal attacks. Analyze HTTP queries, check status codes, find the attacker's IP address, and decode the payload.</p>
+                    </div>
+
+                    <!-- Web Log Viewer Container -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-80">
+                            <table class="w-full text-left text-xs code-font">
+                                <thead class="bg-slate-950 sticky top-0 border-b border-slate-800 text-slate-500">
+                                    <tr>
+                                        <th class="p-3">Source IP</th>
+                                        <th class="p-3">Timestamp</th>
+                                        <th class="p-3">HTTP Request Path</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Bytes Sent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="web-log-tbody" class="divide-y divide-slate-800/40">
+                                    <!-- Log lines loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: LINUX AUTHENTICATION AUDIT ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Resource: <span class="code-font text-amber-400">auth.log</span></h3>
+                        <p class="text-xs text-slate-400">Brute-force activity has been reported on our bastion host. Parse our system security authentication logs, pinpoint the compromised user account, identify the successfully logged in IP, and trace commands.</p>
+                    </div>
+
+                    <!-- Auth Log Viewer Container -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-80">
+                            <table class="w-full text-left text-xs code-font">
+                                <thead class="bg-slate-950 sticky top-0 border-b border-slate-800 text-slate-500">
+                                    <tr>
+                                        <th class="p-3">Timestamp</th>
+                                        <th class="p-3">Host Process</th>
+                                        <th class="p-3">Message Event</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auth-log-tbody" class="divide-y divide-slate-800/40">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: FIREWALL TRAFFIC ANALYSIS ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Resource: <span class="code-font text-emerald-400">egress_firewall.log</span></h3>
+                        <p class="text-xs text-slate-400">Data exfiltration is suspected on our secure local workstation subnet. Audit egress traffic metrics to locate DNS Tunneling activity sending internal secrets to suspicious external servers.</p>
+                    </div>
+
+                    <!-- Firewall Traffic Visual Grid -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto max-h-80">
+                            <table class="w-full text-left text-xs code-font">
+                                <thead class="bg-slate-950 sticky top-0 border-b border-slate-800 text-slate-500">
+                                    <tr>
+                                        <th class="p-3">Source Node IP</th>
+                                        <th class="p-3">Destination IP</th>
+                                        <th class="p-3">Dest Port</th>
+                                        <th class="p-3">DNS Query String</th>
+                                        <th class="p-3">Bytes Sent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="firewall-log-tbody" class="divide-y divide-slate-800/40">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= GLOBAL DECODER UTILITY TOOL ================= -->
+                <div class="mt-6 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="border-b border-slate-800/80 pb-3 flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            SOC Tactical Workbench: Multi-Decoder Tool
+                        </h4>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Convert Payload Formats</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="changeDecoderMode('b64')" id="dec-mode-b64" class="py-2.5 px-3 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 text-xs font-semibold tracking-wider transition">
+                            Base64 Decoder
+                        </button>
+                        <button onclick="changeDecoderMode('url')" id="dec-mode-url" class="py-2.5 px-3 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 text-xs font-semibold tracking-wider transition">
+                            URL Decoder (Hex-to-ASCII)
+                        </button>
+                        <button onclick="changeDecoderMode('epoch')" id="dec-mode-epoch" class="py-2.5 px-3 rounded-lg border border-blue-500 bg-blue-500/10 text-white font-bold text-xs tracking-wider transition">
+                            Hex to Ascii / String
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <textarea id="decoder-input" placeholder="Paste obscure logs parameters/encoded value here..." class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg p-3 text-xs code-font text-blue-400 outline-none transition-all h-20 placeholder-slate-700"></textarea>
+                        
+                        <div class="flex justify-end">
+                            <button onclick="executeDecoding()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg text-xs tracking-wide shadow-lg shadow-blue-500/10 transition active:scale-95">
+                                Decode Payload
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-850 p-4 rounded-lg">
+                        <span class="text-[10px] font-mono text-slate-500 uppercase block mb-1">Processed Output</span>
+                        <div id="decoder-output" class="text-xs code-font text-slate-400 min-h-[40px] flex items-center leading-relaxed select-all">
+                            -- Processed values will be displayed here --
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Analyze the raw logs, isolate anomalies, and submit the flags. Keep <strong>Guided Learning</strong> active if you need clues.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">Why is threat hunting valuable?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Incident Response Engine JavaScript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+        let activeDecoderMode = 'epoch'; // Default to Hex tool to help users with the exfiltration challenge
+
+        // Threat flag solutions database
+        const flagSolutions = {
+            1: { flag: "CTF{w3b_l0g_tr4v5rsal_path}}", solved: false, value: 100 },
+            2: { flag: "CTF{auth_brut3_f0rc3_su_pwnh}", solved: false, value: 100 },
+            3: { flag: "CTF{dns_tunn3l_exf1ltr4t10n}", solved: false, value: 100 }
+        };
+
+        const accessLogs = [
+            { ip: "192.168.12.10", time: "02/Jul/2026:11:01:22", req: "GET /index.php HTTP/1.1", status: 200, size: 4096 },
+            { ip: "192.168.12.55", time: "02/Jul/2026:11:02:45", req: "GET /assets/style.css HTTP/1.1", status: 200, size: 8520 },
+            { ip: "203.0.113.42", time: "02/Jul/2026:11:03:12", req: "GET /view.php?file=logo.png HTTP/1.1", status: 200, size: 430 },
+            { ip: "203.0.113.42", time: "02/Jul/2026:11:04:01", req: "GET /view.php?file=%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd HTTP/1.1", status: 200, size: 1245 },
+            { ip: "192.168.12.20", time: "02/Jul/2026:11:04:32", req: "GET /favicon.ico HTTP/1.1", status: 200, size: 1042 },
+            { ip: "203.0.113.42", time: "02/Jul/2026:11:05:12", req: "GET /view.php?file=%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fsecret_flag%2etxt%3fkey%3dQ1RGe3czYl9sMGdfdHI0djVyc2FsX3BhdGh9 HTTP/1.1", status: 200, size: 1024 },
+            { ip: "203.0.113.42", time: "02/Jul/2026:11:05:50", req: "GET /secret_flag.txt HTTP/1.1", status: 200, size: 45 },
+            { ip: "192.168.12.10", time: "02/Jul/2026:11:06:15", req: "GET /dashboard.php HTTP/1.1", status: 302, size: 120 }
+        ];
+
+        const authLogs = [
+            { time: "Jul 2 11:30:01", proc: "sshd[28901]", msg: "Invalid user admin from 198.51.100.77 port 39422 ssh2" },
+            { time: "Jul 2 11:30:05", proc: "sshd[28905]", msg: "Invalid user root from 198.51.100.77 port 39430 ssh2" },
+            { time: "Jul 2 11:30:10", proc: "sshd[28912]", msg: "Invalid user guest from 198.51.100.77 port 39442 ssh2" },
+            { time: "Jul 2 11:30:15", proc: "sshd[28920]", msg: "Invalid user backup from 198.51.100.77 port 39454 ssh2" },
+            { time: "Jul 2 11:30:18", proc: "sshd[28925]", msg: "Failed password for invalid user backup from 198.51.100.77 port 39454 ssh2" },
+            { time: "Jul 2 11:30:22", proc: "sshd[28930]", msg: "Accepted password for backup from 198.51.100.77 port 39462 ssh2" },
+            { time: "Jul 2 11:31:01", proc: "sshd[28930]", msg: "pam_unix(sshd:session): session opened for user backup by (uid=0)" },
+            { time: "Jul 2 11:31:45", proc: "sudo[28944]", msg: "backup : TTY=pts/1 ; PWD=/home/backup ; USER=root ; COMMAND=/usr/bin/python3 -c import os; os.setuid(0); os.system('echo Q1RGe2F1dGhfYnJ1dDNfZjByYzNfc3VfcHduaH0=')" }
+        ];
+
+        const firewallLogs = [
+            { src: "10.0.0.4", dst: "8.8.8.8", port: 53, query: "www.google.com", bytes: 42 },
+            { src: "10.0.0.12", dst: "1.1.1.1", port: 53, query: "github.com", bytes: 64 },
+            { src: "10.0.0.15", dst: "185.112.14.9", port: 53, query: "4354467b646e735f.tunnel.malicious-dns.com", bytes: 14200 },
+            { src: "10.0.0.15", dst: "185.112.14.9", port: 53, query: "74756e6e336c5f65.tunnel.malicious-dns.com", bytes: 12500 },
+            { src: "10.0.0.15", dst: "185.112.14.9", port: 53, query: "7866316c7472347431306e7d.tunnel.malicious-dns.com", bytes: 15400 },
+            { src: "10.0.0.8", dst: "8.8.4.4", port: 53, query: "microsoft.com", bytes: 52 }
+        ];
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: Web Server Audit",
+                concept: `Web servers keep transactional records of clients' HTTP requests. Attackers often target inputs with URL-encoded sequences to traverse directories. Detecting URL hex characters (like <code class="bg-slate-950 px-1 py-0.5 rounded text-blue-400 font-mono">%2e%2e%2f</code>) reveals their path objectives.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Analyze the access log viewer. Spot the foreign IP <strong class="text-white">203.0.113.42</strong> traversing parameters.</li>
+                    <li>Examine the requested path showing: <code class="bg-slate-950 px-1 py-0.5 rounded text-blue-400 font-mono">%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fsecret_flag%2etxt%3fkey%3dQ1RGe3czYl9sMGdfdHI0djVyc2FsX3BhdGh9</code>.</li>
+                    <li>Copy that traversal query path value.</li>
+                    <li>Set the Multi-Decoder Tool below to <strong class="text-white">URL Decoder</strong>.</li>
+                    <li>Paste the traversal string parameters, hit <strong class="text-white">Decode Payload</strong>, and view the output.</li>
+                    <li>Extract the Base64 key parameter (after <code class="text-blue-400 font-mono">?key=</code>), switch the tool to <strong class="text-white">Base64 Decoder</strong>, and decode it to discover the flag!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Linux Authentication Audit",
+                concept: `System access registers SSH sessions inside authentication logs. Rapid, sequential failed password reports are classic brute-force footprints. Pinpointing the exact moment a session transitions from failed to success exposes compromised users.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Filter the log stack down by typing <strong class="text-amber-400 font-mono">sudo</strong> or <strong class="text-amber-400 font-mono">Accepted</strong> in the search bar.</li>
+                    <li>Find the sudo session command block executed by the compromised <strong class="text-white">backup</strong> account.</li>
+                    <li>Locate the Base64 value printed within the sudo command structure: <code class="bg-slate-950 px-1 py-0.5 rounded text-amber-400 font-mono">Q1RGe2F1dGhfYnJ1dDNfZjByYzNfc3VfcHduaH0=</code>.</li>
+                    <li>Copy the string, select the <strong class="text-white">Base64 Decoder</strong> below, and decode it to recover your flag.</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Firewall Traffic Analysis",
+                concept: `Firewall logs list connection size parameters. DNS Tunneling encodes binary fragments directly inside subdomains. Identifying outbound traffic bursts over DNS Port 53 containing string segments indicates data leaks.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Find the active exfiltration IP sending high byte counts (e.g. <strong class="text-white">10.0.0.15</strong>).</li>
+                    <li>Notice how query headers prepend hexadecimal payloads to the subdomain: <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 font-mono">4354467b...</code>.</li>
+                    <li>Gather the hex strings from the top 3 DNS queries in order:
+                        <ul class="list-disc list-inside pl-4 text-[10px] text-slate-400 mt-1">
+                            <li>Row 1: <code class="text-emerald-400 font-mono">4354467b646e735f</code></li>
+                            <li>Row 2: <code class="text-emerald-400 font-mono">74756e6e336c5f65</code></li>
+                            <li>Row 3: <code class="text-emerald-400 font-mono">7866316c7472347431306e7d</code></li>
+                        </ul>
+                    </li>
+                    <li>Assemble them sequentially: <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 font-mono text-[10px] block my-1">4354467b646e735f74756e6e336c5f657866316c7472347431306e7d</code></li>
+                    <li>Paste the unified hex string into our <strong class="text-white">Hex to Ascii</strong> decoder tool to reveal the flag.</li>
+                </ol>`
+            }
+        };
+
+        // Window Initial Load Lifecycle
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+            clearFilters();
+        });
+
+        // Toast Engine (replaces window alerts)
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-blue-500/20 text-blue-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Active workspace switcher
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+            const promptLabel = document.getElementById('prompt-label');
+
+            if (challengeNum === 1) {
+                workspaceTitle.textContent = "WORKSPACE: Web Server Log Auditor";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@web-audit:~$`;
+            } else if (challengeNum === 2) {
+                workspaceTitle.textContent = "WORKSPACE: Linux Host auth.log Auditor";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@bastion-audit:~$`;
+            } else if (challengeNum === 3) {
+                workspaceTitle.textContent = "WORKSPACE: Network Firewall Traffic Auditor";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@firewall-audit:~$`;
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-c${i}`);
+                const ws = document.getElementById(`ws-c${i}`);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Analyze the raw logs in your active workspace using standard SOC query commands and multi-format decoders.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-blue-400 hover:text-blue-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+
+            filterActiveLogs();
+        }
+
+        // ================= DYNAMIC LOG TABLE RENDERERS =================
+        function filterActiveLogs() {
+            const query = document.getElementById('log-filter').value.toLowerCase().trim();
+            
+            if (activeChallenge === 1) {
+                const tbody = document.getElementById('web-log-tbody');
+                tbody.innerHTML = '';
+                
+                const filtered = accessLogs.filter(log => 
+                    log.ip.toLowerCase().includes(query) || 
+                    log.req.toLowerCase().includes(query) || 
+                    log.status.toString().includes(query)
+                );
+
+                filtered.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/30 transition border-b border-slate-850";
+                    let reqClass = "text-slate-300";
+                    
+                    if (log.req.includes("%2e")) reqClass = "text-amber-400 font-bold bg-amber-500/5";
+                    
+                    tr.innerHTML = `
+                        <td class="p-3 text-slate-400 font-mono">${log.ip}</td>
+                        <td class="p-3 text-slate-500 font-mono">${log.time}</td>
+                        <td class="p-3 ${reqClass} font-mono max-w-md truncate select-all" title="${escapeHTML(log.req)}">${escapeHTML(log.req)}</td>
+                        <td class="p-3 font-mono">${log.status}</td>
+                        <td class="p-3 text-slate-500 font-mono">${log.size}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else if (activeChallenge === 2) {
+                const tbody = document.getElementById('auth-log-tbody');
+                tbody.innerHTML = '';
+
+                const filtered = authLogs.filter(log => 
+                    log.time.toLowerCase().includes(query) || 
+                    log.proc.toLowerCase().includes(query) || 
+                    log.msg.toLowerCase().includes(query)
+                );
+
+                filtered.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/30 transition border-b border-slate-850";
+                    let msgClass = "text-slate-300";
+                    
+                    if (log.msg.includes("Accepted password")) msgClass = "text-emerald-400 font-semibold bg-emerald-500/5";
+                    if (log.msg.includes("sudo")) msgClass = "text-amber-400 font-bold bg-amber-500/5";
+
+                    tr.innerHTML = `
+                        <td class="p-3 text-slate-500 font-mono whitespace-nowrap">${log.time}</td>
+                        <td class="p-3 text-slate-400 font-mono">${log.proc}</td>
+                        <td class="p-3 ${msgClass} font-mono select-all">${escapeHTML(log.msg)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else if (activeChallenge === 3) {
+                const tbody = document.getElementById('firewall-log-tbody');
+                tbody.innerHTML = '';
+
+                const filtered = firewallLogs.filter(log => 
+                    log.src.toLowerCase().includes(query) || 
+                    log.dst.toLowerCase().includes(query) || 
+                    log.query.toLowerCase().includes(query)
+                );
+
+                filtered.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/30 transition border-b border-slate-850";
+                    let dClass = "text-slate-300";
+                    
+                    if (log.bytes > 1000) dClass = "text-emerald-400 font-bold bg-emerald-500/5";
+
+                    tr.innerHTML = `
+                        <td class="p-3 text-slate-400 font-mono">${log.src}</td>
+                        <td class="p-3 text-slate-500 font-mono">${log.dst}</td>
+                        <td class="p-3 text-slate-500 font-mono">${log.port}</td>
+                        <td class="p-3 ${dClass} font-mono select-all">${log.query}</td>
+                        <td class="p-3 text-slate-400 font-mono">${log.bytes}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('log-filter').value = '';
+            filterActiveLogs();
+        }
+
+        // ================= SOC TOOL WORKBENCH: DECODE ENGINE =================
+        function changeDecoderMode(mode) {
+            activeDecoderMode = mode;
+            const buttons = ['b64', 'url', 'epoch'];
+            buttons.forEach(b => {
+                const btn = document.getElementById(`dec-mode-${b}`);
+                if (b === mode) {
+                    btn.className = "py-2.5 px-3 rounded-lg border border-blue-500 bg-blue-500/10 text-white font-bold text-xs tracking-wider transition";
+                } else {
+                    btn.className = "py-2.5 px-3 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 text-xs font-semibold tracking-wider transition";
+                }
+            });
+        }
+
+        function executeDecoding() {
+            const inputVal = document.getElementById('decoder-input').value.trim();
+            const outputBox = document.getElementById('decoder-output');
+
+            if (!inputVal) {
+                notify("Input Empty", "Please insert a payload segment inside the workspace input block.", "error");
+                return;
+            }
+
+            try {
+                if (activeDecoderMode === 'b64') {
+                    const cleanVal = inputVal.replace(/[\s\r\n]+/g, '');
+                    const result = atob(cleanVal);
+                    outputBox.textContent = result;
+                    outputBox.className = "text-xs code-font text-emerald-400 font-bold leading-relaxed select-all";
+                    notify("Decoded!", "Base64 string successfully parsed.", "success");
+                } 
+                else if (activeDecoderMode === 'url') {
+                    const result = decodeURIComponent(inputVal);
+                    outputBox.textContent = result;
+                    outputBox.className = "text-xs code-font text-emerald-400 font-bold leading-relaxed select-all";
+                    notify("Decoded!", "URL-encoded hexadecimal parameters decoded successfully.", "success");
+                } 
+                else if (activeDecoderMode === 'epoch') {
+                    // Treat input as a raw hex string and convert to ASCII
+                    const cleanHex = inputVal.replace(/[\s,]+/g, '');
+                    let asciiStr = '';
+                    for (let i = 0; i < cleanHex.length; i += 2) {
+                        asciiStr += String.fromCharCode(parseInt(cleanHex.substr(i, 2), 16));
+                    }
+                    outputBox.textContent = asciiStr;
+                    outputBox.className = "text-xs code-font text-emerald-400 font-bold leading-relaxed select-all";
+                    notify("Converted!", "Hex parameters successfully translated to ASCII string.", "success");
+                }
+            } catch (err) {
+                outputBox.textContent = `Conversion Error: Failed to parse input string as ${activeDecoderMode.toUpperCase()}. Ensure proper formatting.`;
+                outputBox.className = "text-xs code-font text-red-400 leading-relaxed";
+                notify("Decoder Error", "Provided sequence violates format standards.", "error");
+            }
+        }
+
+        // Helper to escape HTML characters
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This threat vector has already been marked as clean.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("THREAT MITIGATED!", `Excellent responder action! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag. Audit threat records and payloads before submitting.";
+                notify("Remediation Rejected", "Flag value does not match current threat indicators.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Incident Response", 
+                "Incident Responders log, analyze, contain, and recover from cybersecurity events to limit organizational and financial damage.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>
