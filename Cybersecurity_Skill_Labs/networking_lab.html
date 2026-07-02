@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Active Networking Practice Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-sky-500 selection:text-slate-950">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-sky-600 text-slate-950 p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-sky-600/20">
+                NETWORKING
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>SOC Router Command</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Subnet Calculations, Protocol Analysis & Router Diagnoses</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-sky-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Instruction Playbook & Submissions -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-sky-400 uppercase tracking-widest mb-1">Packet Brief</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    Networking challenges test your low-level understanding of packet routing and packet formatting. To secure networks and capture keys, you must understand subnet address blocks, disassemble TCP headers, and diagnose multi-hop routing paths.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Active Targets</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-sky-400 transition">CIDR Subnet Math</h4>
+                                <p class="text-xs text-slate-400">Solve Network Bounds</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">TCP Header Anatomy</h4>
+                                <p class="text-xs text-slate-400">Decode Raw Hex Packets</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Static Route Diagnostics</h4>
+                                <p class="text-xs text-slate-400">Fix Broken Router Hops</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Network Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span id="prompt-label" class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        analyst@networking-workstation:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Subnet CIDR Calculator</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- ================= CHALLENGE 1: SUBNET MATH ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Host IP & Subnet:</h3>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="code-font text-sky-400 text-sm font-bold tracking-wider">172.16.42.85/22</span>
+                            <span class="text-[10px] text-slate-500 font-mono uppercase bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full">IP/CIDR</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">To define routing paths, networks require strict boundaries. Determine the exact Network address, Broadcast bounds, and Usable Host count represented by this mask.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Subnet Input Fields -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Bounds Resolution</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Network IP Address:</label>
+                                    <input id="c1-net-input" type="text" placeholder="e.g., 172.16.0.0" class="w-full bg-slate-950 border border-slate-800 text-sky-400 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Broadcast IP Address:</label>
+                                    <input id="c1-broad-input" type="text" placeholder="e.g., 172.16.255.255" class="w-full bg-slate-950 border border-slate-800 text-sky-400 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Usable Host Capacity:</label>
+                                    <input id="c1-hosts-input" type="number" placeholder="e.g., 254" class="w-full bg-slate-950 border border-slate-800 text-sky-400 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                </div>
+                                <button onclick="verifySubnetMath()" class="w-full bg-sky-600 hover:bg-sky-500 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-sky-600/10">
+                                    Verify Subnet Properties
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subnetting Formulas Help Card -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Subnetting Cheat Sheet</span>
+                                <p class="mb-2">A <code class="text-white font-mono">/22</code> subnet mask uses 22 network bits and leaves 10 host bits. Mask representation: <code class="text-white font-mono">255.255.252.0</code>.</p>
+                                <p class="mb-2">• Usable Hosts: <code class="text-white font-mono">2<sup>(32 - CIDR)</sup> - 2</code></p>
+                                <p class="mb-2">• Network Address: Perform a bitwise AND between the binary representation of the IP and the mask. (Note: block size in the 3rd octet is 4).</p>
+                                <p>• Broadcast Address: Set all host bits in the address range to binary 1.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Output Console -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Verification Output Feed</span>
+                        <div id="c1-verification-box" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs">
+                            -- Supply host calculations above and click verify to trace bounds --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: TCP PACKET ANATOMY ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Raw Packet Header (Hex Dump):</h3>
+                        <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80 font-mono text-xs text-center space-y-2 select-all leading-relaxed">
+                            <div class="grid grid-cols-8 gap-2 text-sky-400 font-bold">
+                                <span class="border-b border-slate-900 pb-1">05 39</span>
+                                <span class="border-b border-slate-900 pb-1">00 50</span>
+                                <span class="border-b border-slate-900 pb-1" colspan="2">00 00 00 01</span>
+                                <span class="border-b border-slate-900 pb-1" colspan="2">00 00 00 00</span>
+                                <span class="border-b border-slate-900 pb-1">50 12</span>
+                                <span class="border-b border-slate-900 pb-1">20 00</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2 text-slate-600 text-[10px]">
+                                <span>Bytes 0-1 (Src Port)</span>
+                                <span>Bytes 2-3 (Dst Port)</span>
+                                <span>Bytes 4-7 (Seq Num)</span>
+                                <span>Bytes 12-15 (Flags & Win)</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Disassembling raw packet dumps is key to forensic traffic analysis. Parse the hexadecimal stream above to determine ports and active TCP Flags.</p>
+                    </div>
+
+                    <!-- Interactive Decoder Fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">TCP Header Field Decoder</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Decoded Source Port (Decimal):</label>
+                                    <input id="c2-src-port" type="number" placeholder="e.g., 80" class="w-full bg-slate-950 border border-slate-800 text-sky-400 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Decoded Destination Port (Decimal):</label>
+                                    <input id="c2-dst-port" type="number" placeholder="e.g., 443" class="w-full bg-slate-950 border border-slate-800 text-sky-400 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Active Control Flags:</label>
+                                    <select id="c2-flags" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded px-3 py-2 code-font outline-none focus:border-sky-500">
+                                        <option value="none">-- Select TCP Flag Combination --</option>
+                                        <option value="syn">SYN (0x02)</option>
+                                        <option value="syn-ack">SYN-ACK (0x12)</option>
+                                        <option value="ack">ACK (0x10)</option>
+                                        <option value="fin-ack">FIN-ACK (0x11)</option>
+                                        <option value="rst">RST (0x04)</option>
+                                    </select>
+                                </div>
+                                <button onclick="verifyTCPAnatomy()" class="w-full bg-sky-600 hover:bg-sky-500 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-sky-600/10">
+                                    Verify Decoded Fields
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Instruction Guidance -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Protocol Reference Cards</span>
+                                <p class="mb-2">1. Hexadecimal numbers are converted to base-10 decimals. Example: <code class="text-white font-mono">0x0050</code> = 80.</p>
+                                <p class="mb-2">2. Byte 12 contains the Data Offset, while Byte 13 (represented by `12`) holds the raw TCP Flag bits.</p>
+                                <p>3. Binary breakdown of Byte 13 flags: <code class="text-white font-mono">0x12</code> in hex equals binary <code class="text-white font-mono">00010010</code>. This corresponds to the SYN and ACK flags being set.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restoration Status Panel -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Decoded Field Output Feed</span>
+                        <div id="c2-verification-box" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-center text-xs">
+                            -- Supply the decoded header values inside the panels to verify --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: ROUTER CLI ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Node: <span class="code-font text-emerald-400">secure-gateway-c.net</span></h3>
+                        <p class="text-xs text-slate-400">Our staging network link is broken. Analyze the network topology, find where the route breaks, and add the missing static route to restore connectivity.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Router command panel -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Interactive Router CLI Console</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Diagnose Network Path:</label>
+                                    <div class="flex gap-2">
+                                        <button onclick="runNetworkTraceroute()" class="flex-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-sky-400 font-bold py-2 rounded-lg text-xs transition">
+                                            Run Traceroute
+                                        </button>
+                                        <button onclick="showRouterRoutingTable()" class="flex-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-sky-400 font-bold py-2 rounded-lg text-xs transition">
+                                            Show Route Table
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="border-t border-slate-800/80 pt-3">
+                                    <label class="text-slate-400 block mb-1">Add Missing Static Route:</label>
+                                    <div class="space-y-2">
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-500 text-[11px] code-font">Router(config)#</span>
+                                            <input id="c3-route-command" type="text" placeholder="ip route [subnet] [mask] [next-hop]" class="w-full bg-slate-950 border border-slate-800 rounded pl-24 pr-3 py-2 text-[11px] code-font text-sky-400 outline-none focus:border-sky-500">
+                                        </div>
+                                        <button onclick="verifyRouteConfiguration()" class="w-full bg-sky-600 hover:bg-sky-500 text-slate-950 font-bold py-2 rounded-lg text-xs transition active:scale-95">
+                                            Execute Command Configuration
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Routing Map board -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Subnet Topology Board</span>
+                                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 font-mono text-[10px] text-slate-400 space-y-1.5">
+                                    <div>[Host Client]  : <span class="text-white">10.0.0.15/24</span></div>
+                                    <div>[Gateway R1]   : <span class="text-white">10.0.0.1</span> & <span class="text-white">192.168.1.1</span></div>
+                                    <div>[Edge R2]      : <span class="text-white">192.168.1.2</span> & <span class="text-white">192.168.2.1</span></div>
+                                    <div>[Destination]  : <span class="text-white">10.100.50.0/24</span> subnet (via Next-Hop <span class="text-sky-400">192.168.2.2</span>)</div>
+                                </div>
+                                <p class="mt-3 leading-relaxed"><strong>Task:</strong> Add a static route on Gateway R1 so traffic destined for the <code class="text-white font-mono bg-slate-950 px-1 py-0.5 rounded">10.100.50.0</code> subnet is forwarded to the Edge R2 interface (<code class="text-white font-mono bg-slate-950 px-1 py-0.5 rounded">192.168.1.2</code>).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Console output terminal -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Cisco IOS Console Output Logs</span>
+                        <div id="c3-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap">
+-- Terminal ready. Trigger traceroute or route parameters to begin --
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Need a clue? Keep <strong>Guided Learning</strong> active on the sidebar to audit standard network configurations.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">Why is subnetting important?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Cracking Engine JavaScript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Threat flag solutions database
+        const flagSolutions = {
+            1: { flag: "CTF{subn3t_m4th_c1dr_pr0}", solved: false, value: 100 },
+            2: { flag: "CTF{tcp_h34d3r_p4rs3d_l1k3_wireshark}", solved: false, value: 100 },
+            3: { flag: "CTF{st4t1c_r0ut3_h0p_by_h0p}", solved: false, value: 100 }
+        };
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: CIDR Subnet Math",
+                concept: `IP subnetting divides network address ranges. Given an IP/CIDR (like <strong class="text-slate-200">172.16.42.85/22</strong>), you must find the network bounds—where the subnet starts, where it ends, and how many unique hosts can fit within that mask.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>The mask for a /22 is <code class="bg-slate-950 px-1 py-0.5 rounded text-sky-400 font-mono">255.255.252.0</code>. The block size in the third octet is <strong class="text-white">4</strong> (256 - 252 = 4).</li>
+                    <li>The third octet of our IP is <strong class="text-white">42</strong>. Multiples of 4 below 42 are 0, 4, ..., 36, 40, 44. Thus, the network starts at <code class="bg-slate-950 px-1.5 py-0.5 rounded text-emerald-400 font-mono">172.16.40.0</code>.</li>
+                    <li>The next block starts at 44, which means our broadcast address third octet must be 43, and the last octet is 255. Result: <code class="bg-slate-950 px-1.5 py-0.5 rounded text-emerald-400 font-mono">172.16.43.255</code>.</li>
+                    <li>The total host count is <code class="bg-slate-950 px-1.5 py-0.5 rounded text-emerald-400 font-mono">2<sup>10</sup> - 2 = 1022</code>.</li>
+                    <li>Enter these three values and verify to unlock the first flag!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: TCP Header Anatomy",
+                concept: `A TCP header contains control parameters (ports, sequence numbers, checksums, flags). In CTF network forensic tasks, you are often given hex dumps of raw packets and must parse these values manually.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Convert the first 2 bytes (<code class="bg-slate-950 px-1 py-0.5 rounded text-sky-400 font-mono">05 39</code>) from Hex to Decimal. In Base-10, <code class="text-white font-mono">0539</code> is <strong class="text-emerald-400">1337</strong>.</li>
+                    <li>Convert the next 2 bytes (<code class="bg-slate-950 px-1 py-0.5 rounded text-sky-400 font-mono">00 50</code>) from Hex to Decimal. In Base-10, <code class="text-white font-mono">0050</code> is <strong class="text-emerald-400">80</strong>.</li>
+                    <li>Determine the active flags. Byte 13 is ` + "`12`" + ` (Binary <code class="text-white font-mono">00010010</code>). This corresponds to the <strong class="text-white">SYN-ACK</strong> flags (0x12).</li>
+                    <li>Input Source Port: <strong class="text-white">1337</strong>, Destination Port: <strong class="text-white">80</strong>, and select <strong class="text-white">SYN-ACK</strong> to unlock your flag!</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Static Route Diagnostics",
+                concept: `If routers do not have an explicit route pointing to a destination subnet, packets are dropped. In cisco architectures, you add static route parameters using the command: <code class="text-slate-200">ip route [subnet] [netmask] [next-hop]</code>.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Run <strong class="text-white">Traceroute</strong> in the console. Notice the packet drops at the very first hop because R1 does not know how to reach the <code class="text-white font-mono">10.100.50.0/24</code> subnet.</li>
+                    <li>Our topology states that R1 must send traffic for that subnet to R2's interface: <code class="bg-slate-950 px-1.5 py-0.5 rounded text-sky-400 font-mono">192.168.1.2</code>.</li>
+                    <li>Construct the cisco static route command: <code class="bg-slate-950 px-1.5 py-1 rounded text-sky-400 font-mono block my-1">ip route 10.100.50.0 255.255.255.0 192.168.1.2</code></li>
+                    <li>Type this command exactly into the terminal input field and execute to fix the route and recover the flag!</li>
+                </ol>`
+            }
+        };
+
+        // Window Initial Load Lifecycle
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+        });
+
+        // Toast Engine (replaces window alerts)
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-sky-500/20 text-sky-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Active workspace switcher
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+            const promptLabel = document.getElementById('prompt-label');
+
+            if (challengeNum === 1) {
+                workspaceTitle.textContent = "WORKSPACE: Subnet CIDR Calculator";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@subnet-node:~$`;
+            } else if (challengeNum === 2) {
+                workspaceTitle.textContent = "WORKSPACE: TCP Hex Packet Analyzer";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@wireshark-node:~$`;
+            } else if (challengeNum === 3) {
+                workspaceTitle.textContent = "WORKSPACE: Static Router CLI";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> cisco-ios@gateway-r1#`;
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById('tab-c' + i);
+                const ws = document.getElementById('ws-c' + i);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-sky-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Solve these networking targets independently using subnet tables and packet headers.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-sky-400 hover:text-sky-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================= CHALLENGE 1: SUBNET MATHS =================
+        function verifySubnetMath() {
+            const netVal = document.getElementById('c1-net-input').value.trim();
+            const broadVal = document.getElementById('c1-broad-input').value.trim();
+            const hostsVal = parseInt(document.getElementById('c1-hosts-input').value);
+            const feedback = document.getElementById('c1-verification-box');
+
+            if (netVal === "172.16.40.0" && broadVal === "172.16.43.255" && hostsVal === 1022) {
+                feedback.className = "bg-slate-900 border border-emerald-500/30 p-4 rounded-lg text-emerald-400 code-font text-xs text-left leading-relaxed";
+                feedback.innerHTML = `
+                    <div class="space-y-1.5">
+                        <span class="block text-xs uppercase tracking-widest text-emerald-500 font-bold">✔ Subnet Verification Successful!</span>
+                        <span class="block text-slate-300">The calculated parameters perfectly map out the bounds for the /22 subnet.</span>
+                        <span class="block text-white bg-slate-950 px-3 py-2 border border-slate-800 rounded font-mono font-bold mt-2">Flag acquired: CTF{subn3t_m4th_c1dr_pr0}</span>
+                    </div>
+                `;
+                notify("Subnet Solved!", "Subnet ranges mathematically verified!", "success");
+            } else {
+                feedback.className = "bg-slate-950 border border-red-500/20 p-4 rounded-lg text-red-400 code-font text-center text-xs";
+                feedback.textContent = "Error: Mismatched subnet range. Ensure calculations match block sizes in the third octet.";
+                notify("Calculation Error", "Verify your network bounds and usable hosts formulas.", "error");
+            }
+        }
+
+        // ================= CHALLENGE 2: TCP PACKET ANATOMY =================
+        function verifyTCPAnatomy() {
+            const srcPort = parseInt(document.getElementById('c2-src-port').value);
+            const dstPort = parseInt(document.getElementById('c2-dst-port').value);
+            const flags = document.getElementById('c2-flags').value;
+            const feedback = document.getElementById('c2-verification-box');
+
+            if (srcPort === 1337 && dstPort === 80 && flags === "syn-ack") {
+                feedback.className = "bg-slate-900 border border-emerald-500/30 p-4 rounded-lg text-emerald-400 code-font text-xs text-left leading-relaxed";
+                feedback.innerHTML = `
+                    <div class="space-y-1.5">
+                        <span class="block text-xs uppercase tracking-widest text-emerald-500 font-bold">✔ Packet Disassembly Successful!</span>
+                        <span class="block text-slate-300">Hexadecimal byte structures parsed correctly. Header attributes verified.</span>
+                        <span class="block text-white bg-slate-950 px-3 py-2 border border-slate-800 rounded font-mono font-bold mt-2">Flag acquired: CTF{tcp_h34d3r_p4rs3d_l1k3_wireshark}</span>
+                    </div>
+                `;
+                notify("Header Parsed!", "TCP binary hex decoded successfully!", "success");
+            } else {
+                feedback.className = "bg-slate-950 border border-red-500/20 p-4 rounded-lg text-red-400 code-font text-center text-xs";
+                feedback.textContent = "Error: Invalid packet translation. Convert ports to base-10 and evaluate active flags.";
+                notify("Parsing Failed", "Hex translation does not match standard offsets.", "error");
+            }
+        }
+
+        // ================= CHALLENGE 3: ROUTER CONSOLE =================
+        let tracerouteRun = false;
+        let routeConfigured = false;
+
+        function runNetworkTraceroute() {
+            const term = document.getElementById('c3-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-sky-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+            
+            term.textContent = "workstation:~$ traceroute 10.100.50.100\n";
+            term.textContent += "traceroute to 10.100.50.100 (10.100.50.100), 30 hops max, 60 byte packets\n";
+
+            setTimeout(() => {
+                term.textContent += " 1  10.0.0.1 (Gateway-R1)  1.025 ms  1.102 ms\n";
+            }, 300);
+
+            setTimeout(() => {
+                if (routeConfigured) {
+                    term.textContent += " 2  192.168.1.2 (Edge-R2)  2.415 ms  2.551 ms\n";
+                    term.textContent += " 3  10.100.50.100 (secure-gateway-c.net)  4.112 ms  4.201 ms\n\n";
+                    term.textContent += "[+] SUCCESS: Host reached! Flag unlocked: CTF{st4t1c_r0ut3_h0p_by_h0p}\n";
+                    notify("Traceroute Reached!", "Routing established across multi-hop subnets!", "success");
+                } else {
+                    term.textContent += " 2  * * * (Request timed out)\n";
+                    term.textContent += " 3  * * * (Request timed out)\n";
+                    term.textContent += " 4  * * * (Request timed out)\n";
+                    term.textContent += "\n[!] ERROR: Destination Host Unreachable. Gateway R1 is missing a route for 10.100.50.0/24.\n";
+                    notify("Traceroute Failed", "Packet dropped at Hop 2. Missing static route path.", "error");
+                }
+                term.scrollTop = term.scrollHeight;
+            }, 800);
+        }
+
+        function showRouterRoutingTable() {
+            const term = document.getElementById('c3-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-emerald-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+            
+            term.textContent = "Gateway-R1# show ip route\n\n";
+            term.textContent += "Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP\n";
+            term.textContent += "       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area\n\n";
+            term.textContent += "Gateway-R1 routing table:\n";
+            term.textContent += "C    10.0.0.0/24 is directly connected, GigabitEthernet0/0\n";
+            term.textContent += "C    192.168.1.0/24 is directly connected, GigabitEthernet0/1\n";
+
+            if (routeConfigured) {
+                term.textContent += "S    10.100.50.0/24 [1/0] via 192.168.1.2\n";
+            } else {
+                term.textContent += "[!] Notice: No static route exists for 10.100.50.0/24 network.\n";
+            }
+        }
+
+        function verifyRouteConfiguration() {
+            const cmd = document.getElementById('c3-route-command').value.trim().toLowerCase();
+            const term = document.getElementById('c3-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-sky-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+
+            // Standard cisco config syntax: ip route 10.100.50.0 255.255.255.0 192.168.1.2
+            const expectedCmd = "ip route 10.100.50.0 255.255.255.0 192.168.1.2";
+
+            if (cmd === expectedCmd) {
+                routeConfigured = true;
+                term.textContent = "Gateway-R1(config)# ip route 10.100.50.0 255.255.255.0 192.168.1.2\n";
+                term.textContent += "[+] Route successfully added to routing table database.\n";
+                term.textContent += "[*] Try running Traceroute again to verify link state!\n";
+                notify("Route Configured!", "Static route established. Trace the link to verify.", "success");
+            } else {
+                term.textContent = `Gateway-R1(config)# ${cmd}\n`;
+                term.textContent += "% Invalid command or bad IP network parameters.\n";
+                term.textContent += "Format: ip route [subnet] [netmask] [next-hop-ip]\n";
+                notify("Invalid CLI Command", "Check your cisco static routing syntax.", "error");
+            }
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This threat vector has already been marked as clean.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("TARGET SOLVED!", `Excellent offline cracking! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag. Audit credentials and target logs before submitting.";
+                notify("Remediation Rejected", "Flag value does not match current target indicators.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Offline Cracking", 
+                "Password cracking converts non-reversible cryptographic hashes back to raw variables using high-velocity dictionary sweeps.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>

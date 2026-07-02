@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec CTF Active Scanning Practice Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-600 text-slate-950 p-2 rounded-lg font-bold text-sm tracking-wider shadow-lg shadow-amber-600/20">
+                SCANNING
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                    <span>SOC Port Ranger</span>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">v1.0.0</span>
+                </h1>
+                <p class="text-xs text-slate-400">Host Discovery, Stealth Port Sweeps & Banner Grabbing</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score Counter -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center gap-3">
+                <span class="text-xs text-slate-400 font-medium">SCORE:</span>
+                <span id="score-counter" class="text-amber-400 font-bold code-font">0 / 300 pts</span>
+            </div>
+            
+            <!-- Guided Mode Toggle -->
+            <button id="guided-mode-btn" class="flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                GUIDED LEARNING ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm">
+        <div id="toast-icon-wrapper" class="p-2 rounded-lg"></div>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm text-white">Notification</h4>
+            <p id="toast-desc" class="text-xs text-slate-400 mt-1">Details...</p>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Instruction Playbook & Submissions -->
+        <section class="w-full lg:w-1/3 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
+            
+            <!-- Background Meta -->
+            <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950">
+                <h2 class="text-sm font-semibold text-amber-400 uppercase tracking-widest mb-1">Scanning Brief</h2>
+                <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                    Scanning is the active process of probing an identified target network to find responsive host computers, determine which ports are open or filtered, and query the active software version headers to find software bugs.
+                </p>
+            </div>
+
+            <!-- Challenge Nav Selection -->
+            <div class="p-4 border-b border-slate-800">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Active Targets</h3>
+                <div class="space-y-2">
+                    <!-- Challenge 1 Tab -->
+                    <button id="tab-c1" onclick="switchChallenge(1)" class="w-full text-left p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-white group-hover:text-amber-400 transition">Host Discovery Sweep</h4>
+                                <p class="text-xs text-slate-400">Locate Active Subnet Hosts</p>
+                            </div>
+                        </div>
+                        <span id="badge-c1" class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 2 Tab -->
+                    <button id="tab-c2" onclick="switchChallenge(2)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">TCP Stealth SYN Scan</h4>
+                                <p class="text-xs text-slate-400">Map Low-Level Ports</p>
+                            </div>
+                        </div>
+                        <span id="badge-c2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+
+                    <!-- Challenge 3 Tab -->
+                    <button id="tab-c3" onclick="switchChallenge(3)" class="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-950/40 hover:bg-slate-900 transition flex items-start justify-between group">
+                        <div class="flex gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <div>
+                                <h4 class="text-sm font-semibold text-slate-300 group-hover:text-white transition">Banner Grab & CVE Audit</h4>
+                                <p class="text-xs text-slate-400">Enumerate Vulnerabilities</p>
+                            </div>
+                        </div>
+                        <span id="badge-c3" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">100 pts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Guide Panel -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        Guided Intel Playbook
+                    </h3>
+                    
+                    <!-- Content populated dynamically -->
+                    <div id="learning-content" class="text-sm text-slate-300 space-y-3 leading-relaxed"></div>
+                </div>
+
+                <!-- Flag Submitter Form -->
+                <div class="mt-6 pt-6 border-t border-slate-800 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                    <label for="flag-input" class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Submit Scanner Flag</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="flag-input" placeholder="CTF{example_flag_here}" class="flex-1 bg-slate-950 border border-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/25 rounded-lg px-3 py-2 text-sm code-font placeholder-slate-600 transition-all outline-none">
+                        <button onclick="checkFlagSubmit()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 px-4 py-2 rounded-lg font-bold text-sm shadow-md active:scale-95 transition-all">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="flag-feedback" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Interactive Workbenches -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-950 overflow-hidden relative">
+            
+            <!-- Terminal Header -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <span id="prompt-label" class="text-xs text-slate-400 font-mono pl-2 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        analyst@scanning-workstation:~$
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <span id="workspace-title" class="font-semibold text-slate-400">WORKSPACE: Subnet Sweep Console</span>
+                </div>
+            </div>
+
+            <!-- Active Workbench Viewports -->
+            <div class="flex-1 p-6 overflow-y-auto relative min-h-[400px]">
+
+                <!-- ================= CHALLENGE 1: HOST DISCOVERY SWEEP ================= -->
+                <div id="ws-c1" class="space-y-6">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Subnet Range:</h3>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="code-font text-amber-500 text-sm font-bold tracking-wider">192.168.1.0/24</span>
+                            <span class="text-[10px] text-slate-500 font-mono uppercase bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full">ICMP Ping Sweep</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Before probing for open ports, run a ping sweep (`-sn`) across the IP block to isolate alive machines from inactive IP nodes.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Sweep Configuration -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Sweep Scope Controller</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Select Scanning Utility Flag:</label>
+                                    <select id="c1-sweep-flag" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded px-3 py-2.5 code-font outline-none focus:border-amber-500">
+                                        <option value="none">-- Select Scan Options --</option>
+                                        <option value="ping">nmap -sn (ICMP Ping Sweep - Stealth host discovery)</option>
+                                        <option value="arp">arp-scan -l (ARP-based local host discovery)</option>
+                                    </select>
+                                </div>
+                                <button onclick="runPingSweep()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-amber-500/10">
+                                    Execute Discovery Sweep
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subnet Host Map Board -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Host Grid Matrix</span>
+                                <div id="c1-host-grid" class="grid grid-cols-5 gap-1.5 font-mono text-[10px]">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Output Console -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Discovery Output Feed</span>
+                        <div id="c1-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap">
+-- Trigger sweep command to discover subnet hosts --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 2: TCP STEALTH SYN SCAN ================= -->
+                <div id="ws-c2" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Target Node Discovery:</h3>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="code-font text-amber-500 text-sm font-bold tracking-wider">192.168.1.150</span>
+                            <span class="text-[10px] text-slate-500 font-mono uppercase bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full">Active Host</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">A target machine has been discovered at IP `192.168.1.150`. Perform a stealth half-open TCP SYN scan (`-sS`) to map active ports and trace the TCP sequence behaviors.</p>
+                    </div>
+
+                    <!-- Scan Configuration Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Half-Open SYN Scan Controller</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Select Scanning Commands:</label>
+                                    <select id="c2-scan-cmd" class="w-full bg-slate-950 border border-slate-800 text-slate-300 rounded px-3 py-2.5 code-font outline-none focus:border-amber-500">
+                                        <option value="none">-- Select Scanner Script --</option>
+                                        <option value="syn">nmap -sS (Half-open TCP stealth scan)</option>
+                                        <option value="full">nmap -sT (Classic Full TCP Connect scan)</option>
+                                    </select>
+                                </div>
+                                <button onclick="runStealthScan()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg text-xs mt-2 transition active:scale-95 shadow-lg shadow-amber-500/10">
+                                    Perform Port Audit
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Handshake diagram -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">SYN Handshake State Engine</span>
+                                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 font-mono text-[10px] space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-amber-500 font-bold">1. Outbound Request:</span>
+                                        <span class="text-white">SYN (Synchronize)</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-amber-500 font-bold">2. Target Reply (Open):</span>
+                                        <span class="text-white">SYN-ACK (Acknowledged)</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-amber-500 font-bold">3. Stealth Tear-Down:</span>
+                                        <span class="text-red-400 font-bold">RST (Reset - Avoids logging)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Port Board -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Interactive Port Scan Results</span>
+                        <div id="c2-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap">
+-- Run port scan configurations to analyze TCP handshakes --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= CHALLENGE 3: BANNER GRABBING ================= -->
+                <div id="ws-c3" class="space-y-6 hidden">
+                    <div class="bg-slate-900/60 rounded-xl p-5 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-slate-200 mb-1">Exploit Mapping:</h3>
+                        <p class="text-xs text-slate-400">Use banner grabbing tool templates to extract service headers. Audit the returned values against our offline CVE database to identify the correct entry flag.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Banner Command Panel -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Auditing Tools Console</span>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Select Scanning Method:</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button onclick="runBannerGrab('nc')" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-amber-500 font-bold py-2.5 rounded-lg text-xs transition">
+                                            nc (Netcat) Banner
+                                        </button>
+                                        <button onclick="runBannerGrab('nmap')" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-amber-500 font-bold py-2.5 rounded-lg text-xs transition">
+                                            nmap -sV Banner
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CVE Database Board -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between text-xs text-slate-400">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">Offline Vulnerability Register</span>
+                                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 font-mono text-[10px] text-slate-400 space-y-1.5 max-h-36 overflow-y-auto">
+                                    <div>[CVE-2026-1025] : ProFTPD 1.3.5 Vulnerable to RCE</div>
+                                    <div>[CVE-2026-4412] : Apache 2.4.49 path traversal leaks</div>
+                                    <div>[CVE-2026-9041] : vsftpd 2.3.4 Backdoor vulnerability</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Console output terminal -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Standard Audit Output Logs</span>
+                        <div id="c3-terminal" class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-slate-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap">
+-- Perform banner grab sequence to map CVE records --
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Meta Actions -->
+            <footer class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Need a clue? Keep <strong>Guided Learning</strong> active on the sidebar to audit standard network configurations.</span>
+                </div>
+                <div>
+                    <a href="#" onclick="showQuickExplanation()" class="hover:text-white transition underline">Why is active scanning critical?</a>
+                </div>
+            </footer>
+
+        </section>
+
+    </main>
+
+    <!-- CTF Cracking Engine JavaScript -->
+    <script>
+        let score = 0;
+        let activeChallenge = 1;
+        let isGuidedMode = true;
+
+        // Threat flag solutions database
+        const flagSolutions = {
+            1: { flag: "CTF{ping_sweep_host_discovery}", solved: false, value: 100 },
+            2: { flag: "CTF{tcp_stealth_syn_port_scanner}", solved: false, value: 100 },
+            3: { flag: "CTF{vsftpd_backdoor_cve_grab}", solved: false, value: 100 }
+        };
+
+        const explanations = {
+            1: {
+                title: "Challenge 01: Host Discovery Sweep",
+                concept: `Host Discovery determines which systems are online within a subnet range. A Ping Sweep (<code class="text-amber-500 font-mono">nmap -sn</code>) sends ICMP echo requests to discover active IP targets without scanning for open ports.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Select <strong class="text-white">nmap -sn (ICMP Ping Sweep)</strong> from the Sweep Config controller.</li>
+                    <li>Click <strong class="text-white">Execute Discovery Sweep</strong>.</li>
+                    <li>Watch the Host Grid Matrix process and illuminate alive IP targets on our network map.</li>
+                    <li>Observe the responsive host found at <code class="text-amber-500 font-mono">192.168.1.150</code>.</li>
+                    <li>The scan will dump the discovery flag directly into the console output!</li>
+                </ol>`
+            },
+            2: {
+                title: "Challenge 02: Stealth SYN Port Scan",
+                concept: `Stealth scanning (<code class="text-amber-500 font-mono">nmap -sS</code>) determines port states while avoiding standard application logging. By sending a SYN packet and immediately sending a RST (reset) packet upon receiving a SYN-ACK, Nmap never completes the full 3-way handshake.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Select <strong class="text-white">nmap -sS (Half-open TCP stealth scan)</strong> in the command dropdown.</li>
+                    <li>Click <strong class="text-white">Perform Port Audit</strong> to sweep port states.</li>
+                    <li>Observe the captured TCP packet streams showing SYN, SYN-ACK, and RST transitions.</li>
+                    <li>The stealth sweep will successfully audit target ports and release the second flag.</li>
+                </ol>`
+            },
+            3: {
+                title: "Challenge 03: Banner Grab & CVE Audit",
+                concept: `Banner grabbing connects directly to a port and displays the server welcome message. This version string allows attackers to identify known vulnerabilities.`,
+                hint: `<ol class="list-decimal list-inside space-y-2 text-xs">
+                    <li>Click on <strong class="text-white">nc (Netcat) Banner</strong> or <strong class="text-white">nmap -sV Banner</strong> to audit Port 21's Welcome banner.</li>
+                    <li>Analyze the welcome banner message: <code class="text-white font-mono bg-slate-950 px-1 py-0.5 rounded">220 vsFTPd 2.3.4</code>.</li>
+                    <li>Check the offline CVE database. Notice <strong class="text-white">CVE-2026-9041</strong> maps vsFTPd 2.3.4 to a backdoor exploit path.</li>
+                    <li>Our audit scanner will verify the version banner and output the final flag sequence!</li>
+                </ol>`
+            }
+        };
+
+        // Initialize Host Grid Map
+        function buildHostGrid() {
+            const grid = document.getElementById('c1-host-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 20; i++) {
+                const hostId = 140 + i;
+                const cell = document.createElement('div');
+                cell.id = `host-${hostId}`;
+                cell.className = "bg-slate-900 border border-slate-800 p-2 rounded flex flex-col items-center justify-center transition-all text-center";
+                cell.innerHTML = `
+                    <span class="text-slate-500 block text-[8px] font-bold">.${hostId}</span>
+                    <span class="text-slate-600 font-bold block text-[9px] state-label">DEAD</span>
+                `;
+                grid.appendChild(cell);
+            }
+        }
+
+        // Window Initial Load Lifecycle
+        window.addEventListener('DOMContentLoaded', () => {
+            switchChallenge(1);
+            buildHostGrid();
+        });
+
+        // Toast Engine (replaces window alerts)
+        function notify(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const iconWrapper = document.getElementById('toast-icon-wrapper');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+
+            titleEl.textContent = title;
+            descEl.textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = 'p-2 rounded-lg bg-emerald-500/20 text-emerald-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else if (type === 'error') {
+                iconWrapper.className = 'p-2 rounded-lg bg-red-500/20 text-red-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            } else {
+                iconWrapper.className = 'p-2 rounded-lg bg-amber-500/20 text-amber-400';
+                iconWrapper.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = 'fixed top-24 right-6 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            
+            setTimeout(() => {
+                toast.className = 'fixed top-24 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl flex items-start gap-3 max-w-sm transition-all duration-300';
+            }, 4000);
+        }
+
+        // Active workspace switcher
+        function switchChallenge(challengeNum) {
+            activeChallenge = challengeNum;
+            const workspaceTitle = document.getElementById('workspace-title');
+            const promptLabel = document.getElementById('prompt-label');
+
+            if (challengeNum === 1) {
+                workspaceTitle.textContent = "WORKSPACE: Subnet Sweep Console";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@subnet-sweep:~$`;
+            } else if (challengeNum === 2) {
+                workspaceTitle.textContent = "WORKSPACE: TCP Stealth SYN Scanner";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@syn-scanner:~$`;
+            } else if (challengeNum === 3) {
+                workspaceTitle.textContent = "WORKSPACE: Banner Grab & Auditer";
+                promptLabel.innerHTML = `<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> analyst@banner-grabber:~$`;
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById('tab-c' + i);
+                const ws = document.getElementById('ws-c' + i);
+                if (i === challengeNum) {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition flex items-start justify-between group";
+                    ws.classList.remove('hidden');
+                } else {
+                    tab.className = "w-full text-left p-3 rounded-xl border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/40 transition flex items-start justify-between group";
+                    ws.classList.add('hidden');
+                }
+            }
+
+            const infoContainer = document.getElementById('learning-content');
+            const data = explanations[challengeNum];
+            
+            if (isGuidedMode) {
+                infoContainer.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-white text-base">${data.title}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${data.concept}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                            <h5 class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                Step-By-Step Playbook:
+                            </h5>
+                            ${data.hint}
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoContainer.innerHTML = `
+                    <div class="space-y-3 py-4 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                        <h4 class="font-bold text-slate-400">Guided Mode Disabled</h4>
+                        <p class="text-xs text-slate-500">Scan these environments independently using target parameters and network sweeps.</p>
+                        <button onclick="document.getElementById('guided-mode-btn').click()" class="text-xs text-amber-400 hover:text-amber-300 font-bold underline">Re-enable guidance</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================= CHALLENGE 1: HOST DISCOVERY SWEEP =================
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function runPingSweep() {
+            const flag = document.getElementById('c1-sweep-flag').value;
+            const term = document.getElementById('c1-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-amber-500 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+
+            if (flag === "none") {
+                notify("Configuration Error", "Please select a scanning option before executing.", "error");
+                return;
+            }
+
+            term.textContent = `Starting Nmap 7.92 ( https://nmap.org ) at 2026-07-02 13:42 UTC\n`;
+            await sleep(400);
+            term.textContent += `Scanning subnet 192.168.1.0/24...\n`;
+            
+            // Reset grid
+            buildHostGrid();
+
+            const responsiveHosts = [142, 150, 158];
+
+            for (let i = 1; i <= 20; i++) {
+                const hostId = 140 + i;
+                const cell = document.getElementById(`host-${hostId}`);
+                await sleep(100);
+
+                if (responsiveHosts.includes(hostId)) {
+                    cell.className = "bg-emerald-950/20 border border-emerald-500 p-2 rounded flex flex-col items-center justify-center transition-all text-center shadow-lg shadow-emerald-500/10";
+                    const stateLabel = cell.querySelector('.state-label');
+                    if (stateLabel) {
+                        stateLabel.className = "text-emerald-400 font-bold block text-[9px] state-label";
+                        stateLabel.textContent = "ALIVE";
+                    }
+                    term.textContent += `Nmap scan report for 192.168.1.${hostId} (host UP)\n`;
+                } else {
+                    term.textContent += `Host 192.168.1.${hostId} is down.\n`;
+                }
+                term.scrollTop = term.scrollHeight;
+            }
+
+            if (flag === "ping") {
+                term.textContent += `\n[+] Host discovery scan complete! Active hosts located: 3\n`;
+                term.textContent += `[!] Flag Acquired: CTF{ping_sweep_host_discovery}\n`;
+                notify("Discovery Complete!", "Active hosts successfully mapped to the grid!", "success");
+            } else if (flag === "arp") {
+                term.textContent += `\n[+] Local ARP scan complete!\n`;
+                term.textContent += `[!] Flag Acquired: CTF{ping_sweep_host_discovery}\n`;
+                notify("Discovery Complete!", "Local subnet host addresses successfully mapped!", "success");
+            }
+        }
+
+        // ================= CHALLENGE 2: TCP STEALTH SYN SCAN =================
+        async function runStealthScan() {
+            const cmd = document.getElementById('c2-scan-cmd').value;
+            const term = document.getElementById('c2-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-sky-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+
+            if (cmd === "none") {
+                notify("Configuration Error", "Please select a port scanning option.", "error");
+                return;
+            }
+
+            term.textContent = "Initiating TCP stealth scan against 192.168.1.150...\n";
+            await sleep(400);
+
+            term.textContent += ">>> Outbound Connection: [SYN] to port 21 ... reply [SYN-ACK] ... sending [RST]\n";
+            await sleep(300);
+            term.textContent += ">>> Outbound Connection: [SYN] to port 22 ... reply [RST-ACK] ... (Closed)\n";
+            await sleep(300);
+            term.textContent += ">>> Outbound Connection: [SYN] to port 80 ... reply [SYN-ACK] ... sending [RST]\n";
+            await sleep(300);
+
+            term.textContent += `\nPORT    STATE  SERVICE\n21/tcp  open   ftp\n22/tcp  closed ssh\n80/tcp  open   http\n\n`;
+            term.textContent += `[+] Stealth scan verification success. Flag Unlocked: CTF{tcp_stealth_syn_port_scanner}\n`;
+            
+            notify("Scan Complete!", "Stealth SYN scan executed and port map populated!", "success");
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // ================= CHALLENGE 3: BANNER GRABBING =================
+        async function runBannerGrab(tool) {
+            const term = document.getElementById('c3-terminal');
+            term.className = "bg-slate-950 border border-slate-800 p-4 rounded-lg text-emerald-400 code-font text-xs h-40 overflow-y-auto whitespace-pre-wrap text-left leading-relaxed";
+
+            term.textContent = `>>> Executing service banner interrogation using ${tool === 'nc' ? 'Netcat' : 'Nmap sV'}...\n`;
+            await sleep(500);
+
+            if (tool === 'nc') {
+                term.textContent += "analyst@scanning-workstation:~$ nc 192.168.1.150 21\n";
+                await sleep(400);
+                term.textContent += "220 vsFTPd 2.3.4 (Anonymous login permitted)\n\n";
+            } else {
+                term.textContent += "analyst@scanning-workstation:~$ nmap -sV -p 21 192.168.1.150\n";
+                await sleep(400);
+                term.textContent += "PORT   STATE SERVICE VERSION\n21/tcp open  ftp     vsFTPd 2.3.4\n\n";
+            }
+
+            term.textContent += "[+] Analysis matching vsFTPd 2.3.4 -> CVE-2026-9041 verified.\n";
+            term.textContent += "[!] Exploitation Flag Decoded: CTF{vsftpd_backdoor_cve_grab}\n";
+            notify("Banner Acquired!", "Version banner matches vulnerable CVE index. Flag decrypted!", "success");
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // ================= GLOBAL FLAG SUBMISSION =================
+        function checkFlagSubmit() {
+            const userIn = document.getElementById('flag-input').value.trim();
+            const feedback = document.getElementById('flag-feedback');
+
+            let matches = false;
+            let matchedChallenge = 0;
+
+            for (let id in flagSolutions) {
+                if (flagSolutions[id].flag === userIn) {
+                    matches = true;
+                    matchedChallenge = id;
+                    break;
+                }
+            }
+
+            if (matches) {
+                if (flagSolutions[matchedChallenge].solved) {
+                    feedback.className = "mt-2 text-xs text-amber-400 font-semibold";
+                    feedback.textContent = "You already submitted this flag successfully!";
+                    notify("Duplicate Flag", "This threat vector has already been marked as clean.", "info");
+                    return;
+                }
+
+                flagSolutions[matchedChallenge].solved = true;
+                score += flagSolutions[matchedChallenge].value;
+                
+                document.getElementById('score-counter').textContent = `${score} / 300 pts`;
+                
+                const badge = document.getElementById(`badge-c${matchedChallenge}`);
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono";
+                badge.textContent = "SOLVED";
+
+                feedback.className = "mt-2 text-xs text-emerald-400 font-semibold";
+                feedback.textContent = `Success! Correct Flag submitted (+${flagSolutions[matchedChallenge].value} pts)`;
+                document.getElementById('flag-input').value = '';
+
+                notify("TARGET SOLVED!", `Excellent offline cracking! Level 0${matchedChallenge} solved!`, "success");
+            } else {
+                feedback.className = "mt-2 text-xs text-red-400 font-semibold";
+                feedback.textContent = "Incorrect Flag. Audit credentials and target logs before submitting.";
+                notify("Remediation Rejected", "Flag value does not match current target indicators.", "error");
+            }
+        }
+
+        function showQuickExplanation() {
+            notify(
+                "Active Reconnaissance", 
+                "Active scanning lets penetration testers map systems, verify port states, and identify software version vulnerabilities.", 
+                "info"
+            );
+        }
+    </script>
+</body>
+</html>
